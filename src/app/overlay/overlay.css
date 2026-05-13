@@ -1,0 +1,22 @@
+/* Overlay-specific styles — transparent background for OBS */
+body {
+  background: transparent !important;
+}
+
+@keyframes overlaySlideIn {
+  0% { transform: translateY(-40px) scale(0.9); opacity: 0; }
+  60% { transform: translateY(5px) scale(1.02); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes overlaySlideOut {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-30px) scale(0.9); opacity: 0; }
+}
+@keyframes overlayPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.6), 0 0 60px rgba(6, 182, 212, 0.2); }
+}
+@keyframes overlayGlow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
