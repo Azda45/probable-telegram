@@ -14,8 +14,6 @@ export interface User {
   bio: string | null;
   avatar_url: string | null;
   alert_sound: string;
-  tts_enabled: boolean;
-  tts_voice: string;
 }
 
 export interface DonationRecord {

@@ -36,8 +36,6 @@ export async function GET(req: NextRequest) {
     settings: {
       alert_sound: user.alert_sound,
       alert_duration: user.alert_duration,
-      tts_enabled: user.tts_enabled,
-      tts_voice: user.tts_voice,
     },
   });
 }

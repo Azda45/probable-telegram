@@ -24,8 +24,8 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontWeight: 500 }}>LOGGED IN AS</span>
                 <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>{user.display_name}</span>
               </div>
-              <button 
-                className="btn btn-secondary btn-sm" 
+              <button
+                className="btn btn-secondary btn-sm"
                 onClick={onLogout}
                 style={{ borderRadius: "8px", height: 32 }}
               >

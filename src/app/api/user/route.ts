@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { getUserById, getDonationStats, updateUserSettings, regenerateKeys } from "@/lib/services";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const user = await getAuthUser();
     if (!user) {
@@ -29,7 +29,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { display_name, bio, min_amount, max_amount, alert_sound, alert_duration, tts_enabled, avatar_url, tts_voice } = body;
+    const { display_name, bio, min_amount, max_amount, alert_sound, alert_duration, avatar_url } = body;
 
     await updateUserSettings(user.id, {
       display_name,
@@ -38,9 +38,7 @@ export async function PUT(req: NextRequest) {
       max_amount,
       alert_sound,
       alert_duration,
-      tts_enabled,
       avatar_url,
-      tts_voice,
     });
 
     const updated = await getUserById(user.id);

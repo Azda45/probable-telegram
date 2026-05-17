@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || "";
 const IS_PRODUCTION = process.env.MIDTRANS_IS_PRODUCTION === "true";
 
@@ -38,8 +40,7 @@ interface TransactionStatusResponse {
 export async function createQrisCharge(
   orderId: string,
   amount: number,
-  donorName: string,
-  message: string
+  donorName: string
 ): Promise<ChargeResponse> {
   const payload = {
     payment_type: "gopay",
@@ -104,7 +105,6 @@ export function verifySignatureKey(
   signatureKey: string
 ): boolean {
   // Midtrans signature: SHA512(order_id + status_code + gross_amount + server_key)
-  const crypto = require("crypto");
   const input = orderId + statusCode + grossAmount + MIDTRANS_SERVER_KEY;
   const hash = crypto.createHash("sha512").update(input).digest("hex");
   return hash === signatureKey;

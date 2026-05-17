@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const orderId = `DON-${nanoid(16)}`;
 
     // ── Buat Midtrans charge ──
-    const charge = await createQrisCharge(orderId, amount, donorNameClean, messageClean || "");
+    const charge = await createQrisCharge(orderId, amount, donorNameClean);
 
     // Extract QR URL and deeplink
     const qrUrl = charge.actions?.find((a) => a.name === "generate-qr-code")?.url || null;

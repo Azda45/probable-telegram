@@ -19,13 +19,13 @@ export default function CopyLink({ label, url }: CopyLinkProps) {
         {label}
       </label>
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-        <input 
-          readOnly 
-          value={url} 
-          className="input" 
-          style={{ height: 36, fontSize: "0.8125rem", background: "var(--color-surface)", borderStyle: "dashed" }} 
+        <input
+          readOnly
+          value={url}
+          className="input"
+          style={{ height: 36, fontSize: "0.8125rem", background: "var(--color-surface)", borderStyle: "dashed" }}
         />
-        <button 
+        <button
           onClick={handleCopy}
           className="btn btn-secondary btn-sm"
           style={{ height: 36, padding: "0 1rem", flexShrink: 0 }}

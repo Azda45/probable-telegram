@@ -2,171 +2,127 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { playNotificationSound } from "@/components/NotificationSound";
+import {
+  destroyAlertAudio,
+  playNotificationSound,
+  preloadAlertSounds,
+  stopAlertSounds,
+  unlockAlertAudio,
+} from "@/components/NotificationSound";
 import { formatRupiah } from "@/lib/utils";
 import type { OverlayNotification } from "@/lib/types";
+import { createRealtimeSocket, type RealtimeClientSocket } from "@/lib/realtime/socket-client";
+import { REALTIME_EVENTS, type PublicDonationPayload, type RealtimeEvent } from "@/lib/realtime/events";
 
 interface Settings {
   alert_duration: number;
   alert_sound: string;
-  tts_enabled: boolean;
-  tts_voice?: string;
 }
 
-// ── Audio Manager ──
-// Creates a fresh Audio element per notification.
-// Uses a "resolved" guard to prevent double-resolve bugs.
-class TTSAudioManager {
-  private currentAudio: HTMLAudioElement | null = null;
-
-  /** Stop current HTML5 Audio playback */
-  stopAudio() {
-    if (this.currentAudio) {
-      try {
-        this.currentAudio.pause();
-        this.currentAudio.src = "";
-      } catch { /* ignore */ }
-      this.currentAudio = null;
-    }
-  }
-
-  /** Cancel SpeechSynthesis — call ONLY right before a new speak() */
-  private cancelSpeech() {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-  }
-
-  /**
-   * Play Cloud TTS (Google Translate).
-   * Waits for "canplaythrough" before calling play() to avoid
-   * premature play failures on slow connections.
-   */
-  playCloud(url: string): Promise<void> {
-    this.stopAudio();
-    this.cancelSpeech();
-
-    return new Promise<void>((resolve) => {
-      let resolved = false;
-      const done = () => {
-        if (resolved) return; // ← Guard: only resolve once
-        resolved = true;
-        audio.removeEventListener("ended", done);
-        audio.removeEventListener("error", done);
-        if (this.currentAudio === audio) this.currentAudio = null;
-        resolve();
-      };
-
-      const audio = new Audio();
-      audio.volume = 1.0;
-      audio.preload = "auto";
-      this.currentAudio = audio;
-
-      audio.addEventListener("ended", done);
-      audio.addEventListener("error", done);
-
-      // Safety timeout: force-resolve if audio hangs
-      setTimeout(done, 20000);
-
-      // Wait for enough data before playing
-      audio.addEventListener(
-        "canplaythrough",
-        () => {
-          if (resolved) return;
-          audio.play().catch(done);
-        },
-        { once: true }
-      );
-
-      // Set src last — this triggers loading
-      audio.src = url;
-
-      // Fallback: if canplaythrough doesn't fire in 5s, try play anyway
-      setTimeout(() => {
-        if (resolved) return;
-        audio.play().catch(done);
-      }, 5000);
-    });
-  }
-
-  /**
-   * Play Browser SpeechSynthesis (male voices).
-   * Includes 150ms delay after cancel() to avoid Chrome silence bug.
-   */
-  playSpeech(text: string, lang: string): Promise<void> {
-    this.stopAudio();
-    this.cancelSpeech();
-
-    return new Promise<void>((resolve) => {
-      if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-        resolve();
-        return;
-      }
-
-      let resolved = false;
-      const done = () => {
-        if (resolved) return;
-        resolved = true;
-        resolve();
-      };
-
-      // Chrome workaround: 150ms delay after cancel() before speak()
-      setTimeout(() => {
-        if (resolved) return;
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        const voices = window.speechSynthesis.getVoices();
-        const targetLang = lang.split("-")[1] || "id";
-
-        // Find best male voice
-        const maleVoice =
-          voices.find(
-            (v) =>
-              v.lang.startsWith(targetLang) &&
-              (v.name.toLowerCase().includes("male") ||
-                v.name.toLowerCase().includes("david") ||
-                v.name.toLowerCase().includes("alex"))
-          ) ||
-          voices.find((v) => v.lang.startsWith(targetLang)) ||
-          voices[0];
-
-        if (maleVoice) utterance.voice = maleVoice;
-        utterance.rate = 0.9;
-        utterance.pitch = 0.8;
-
-        utterance.onend = done;
-        utterance.onerror = done;
-
-        // Safety timeout
-        setTimeout(done, 15000);
-
-        window.speechSynthesis.speak(utterance);
-      }, 150);
-    });
-  }
-
-  /** Full cleanup — only for unmount */
-  destroy() {
-    this.stopAudio();
-    this.cancelSpeech();
-  }
+interface AlertLifecycleState {
+  donationId: string;
+  startedAt: number;
+  durationMs: number;
+  audioPlayed: boolean;
+  completed: boolean;
+  completedAt?: number;
 }
+
+interface QueuedNotification {
+  notif: OverlayNotification;
+  forceReplay: boolean;
+}
+
+const ALERT_STATE_PREFIX = "overlay-alert-state";
+const COMPLETED_STATE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function OverlayContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const token = searchParams?.get("token");
 
   const [current, setCurrent] = useState<OverlayNotification | null>(null);
   const [isShowing, setIsShowing] = useState(false);
-  const [audioBlocked, setAudioBlocked] = useState(false);
+  const [isResumedAlert, setIsResumedAlert] = useState(false);
 
   const settingsRef = useRef<Settings | null>(null);
-  const queueRef = useRef<OverlayNotification[]>([]);
+  const queueRef = useRef<QueuedNotification[]>([]);
   const showingRef = useRef(false);
   const activeNotifIdRef = useRef<string | null>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const audioManagerRef = useRef(new TTSAudioManager());
+  const socketRef = useRef<RealtimeClientSocket | null>(null);
+  const showNotificationRef = useRef<(item: QueuedNotification) => void>(() => {});
+
+  const getAlertStorageKey = useCallback(
+    (donationId: string) => `${ALERT_STATE_PREFIX}:${token || "no-token"}:${donationId}`,
+    [token]
+  );
+
+  const loadAlertState = useCallback(
+    (donationId: string): AlertLifecycleState | null => {
+      if (typeof window === "undefined") return null;
+      try {
+        const raw = window.localStorage.getItem(getAlertStorageKey(donationId));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as AlertLifecycleState;
+        if (parsed.completed && parsed.completedAt && Date.now() - parsed.completedAt > COMPLETED_STATE_TTL_MS) {
+          window.localStorage.removeItem(getAlertStorageKey(donationId));
+          return null;
+        }
+        return parsed;
+      } catch (error) {
+        console.warn("[overlay-lifecycle] failed to load alert state", { donationId, error });
+        return null;
+      }
+    },
+    [getAlertStorageKey]
+  );
+
+  const saveAlertState = useCallback(
+    (state: AlertLifecycleState) => {
+      if (typeof window === "undefined") return;
+      try {
+        window.localStorage.setItem(getAlertStorageKey(state.donationId), JSON.stringify(state));
+      } catch (error) {
+        console.warn("[overlay-lifecycle] failed to save alert state", { donationId: state.donationId, error });
+      }
+    },
+    [getAlertStorageKey]
+  );
+
+  const createFreshAlertState = useCallback((notif: OverlayNotification): AlertLifecycleState => {
+    const durationMs = (settingsRef.current?.alert_duration || 5) * 1000;
+    return {
+      donationId: notif.id,
+      startedAt: Date.now(),
+      durationMs,
+      audioPlayed: false,
+      completed: false,
+    };
+  }, []);
+
+  const ackNotification = useCallback(
+    (donationId: string) => {
+      const completedState = loadAlertState(donationId);
+      if (completedState) {
+        saveAlertState({ ...completedState, completed: true, completedAt: Date.now() });
+      }
+
+      if (socketRef.current?.connected) {
+        socketRef.current.emit(REALTIME_EVENTS.OVERLAY_ACK, {
+          donationId,
+          displayedAt: new Date().toISOString(),
+        });
+      } else {
+        fetch(`/api/overlay?token=${token}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ donationId }),
+        }).catch(() => {});
+      }
+    },
+    [loadAlertState, saveAlertState, token]
+  );
 
   const clearAllTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -179,54 +135,84 @@ function OverlayContent() {
     return id;
   }, []);
 
-  // Initialize audio unlock on mount
+  // Preload alert audio once per overlay session and unlock on first interaction.
   useEffect(() => {
+    preloadAlertSounds().catch((error) => {
+      console.warn("Alert audio preload failed:", error);
+    });
+
+    const cleanupListeners = () => {
+      window.removeEventListener("click", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+
     const unlockAudio = () => {
-      const dummyAudio = new Audio(
-        "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"
-      );
-      dummyAudio.play().catch(() => {});
-
-      if ("speechSynthesis" in window) {
-        const u = new SpeechSynthesisUtterance("");
-        u.volume = 0;
-        window.speechSynthesis.speak(u);
-      }
-
-      setAudioBlocked(false);
+      unlockAlertAudio().finally(cleanupListeners);
     };
 
     window.addEventListener("click", unlockAudio, { once: false });
     window.addEventListener("touchstart", unlockAudio, { once: false });
     window.addEventListener("keydown", unlockAudio, { once: false });
 
-    // Pre-load voices for SpeechSynthesis
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.getVoices();
-    }
-
     return () => {
-      window.removeEventListener("click", unlockAudio);
-      window.removeEventListener("touchstart", unlockAudio);
-      window.removeEventListener("keydown", unlockAudio);
-      audioManagerRef.current.destroy();
+      cleanupListeners();
+      stopAlertSounds();
+      destroyAlertAudio();
       clearAllTimers();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const showNotification = useCallback(
-    (notif: OverlayNotification) => {
+    ({ notif, forceReplay }: QueuedNotification) => {
       clearAllTimers();
+
+      const existingState = forceReplay ? null : loadAlertState(notif.id);
+      const lifecycle = existingState || createFreshAlertState(notif);
+      const elapsedMs = Math.max(0, Date.now() - lifecycle.startedAt);
+      const remainingMs = Math.max(0, lifecycle.durationMs - elapsedMs);
+
+      if (lifecycle.completed || remainingMs <= 0) {
+        console.debug("[overlay-lifecycle] recovered alert already expired/completed; ack without replay", {
+          donationId: notif.id,
+          elapsedMs,
+          durationMs: lifecycle.durationMs,
+          completed: lifecycle.completed,
+        });
+        saveAlertState({ ...lifecycle, completed: true, completedAt: Date.now() });
+        ackNotification(notif.id);
+
+        if (queueRef.current.length > 0) {
+          const next = queueRef.current.shift()!;
+          addTimer(() => showNotificationRef.current(next), 0);
+        }
+        return;
+      }
+
+      saveAlertState(lifecycle);
+
+      console.debug("[overlay-audio] showing notification", {
+        donationId: notif.id,
+        alertSound: settingsRef.current?.alert_sound || "default",
+        forceReplay,
+        elapsedMs,
+        remainingMs,
+        audioPlayed: lifecycle.audioPlayed,
+      });
 
       showingRef.current = true;
       activeNotifIdRef.current = notif.id;
       setCurrent(notif);
+      setIsResumedAlert(Boolean(existingState && elapsedMs > 0 && !forceReplay));
       setIsShowing(true);
 
-      // Play notification alert sound
-      if (settingsRef.current?.alert_sound !== "none") {
-        playNotificationSound().catch(() => {});
+      // Play alert audio only once per lifecycle. Recovered in-progress alerts resume visually without replaying audio.
+      if (!lifecycle.audioPlayed && settingsRef.current?.alert_sound !== "none") {
+        saveAlertState({ ...lifecycle, audioPlayed: true });
+        playNotificationSound(settingsRef.current?.alert_sound).catch((error) => {
+          console.warn("[overlay-audio] alert playback failed", error);
+        });
       }
 
       // Helper: slide out → clear → next
@@ -237,139 +223,150 @@ function OverlayContent() {
         addTimer(() => {
           if (activeNotifIdRef.current === notif.id) {
             setCurrent(null);
+            setIsResumedAlert(false);
             showingRef.current = false;
             activeNotifIdRef.current = null;
           }
 
-          fetch(`/api/overlay?token=${token}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ donationId: notif.id }),
-          }).catch(() => {});
+          saveAlertState({ ...lifecycle, audioPlayed: true, completed: true, completedAt: Date.now() });
+          ackNotification(notif.id);
 
           if (queueRef.current.length > 0) {
             const next = queueRef.current.shift()!;
-            addTimer(() => showNotification(next), 3000);
+            addTimer(() => showNotificationRef.current(next), 3000);
           }
         }, 600);
       };
 
-      // TTS-aware display timing
-      if (settingsRef.current?.tts_enabled) {
-        const text = `${notif.donor_name} berdonasi sebesar ${notif.amount} rupiah. ${notif.message || ""}`;
-        const lang = settingsRef.current?.tts_voice || "id";
-        const showStartTime = Date.now();
-        const MIN_DISPLAY_MS = 3000;
-
-        let ttsDoneHandled = false;
-        const onTTSDone = () => {
-          if (ttsDoneHandled || activeNotifIdRef.current !== notif.id) return;
-          ttsDoneHandled = true;
-
-          const elapsed = Date.now() - showStartTime;
-          const remainingMinDisplay = Math.max(0, MIN_DISPLAY_MS - elapsed);
-          const holdDelay = Math.max(remainingMinDisplay, 1500);
-          addTimer(hideAndNext, holdDelay);
-        };
-
-        // Start TTS after 1s
-        addTimer(async () => {
-          const splitText = (str: string, limit: number) => {
-            const words = str.split(" ");
-            const chunks: string[] = [];
-            let currentStr = "";
-            for (const word of words) {
-              if ((currentStr + word).length > limit) {
-                chunks.push(currentStr.trim());
-                currentStr = word + " ";
-              } else {
-                currentStr += word + " ";
-              }
-            }
-            if (currentStr) chunks.push(currentStr.trim());
-            return chunks;
-          };
-
-          const chunks = splitText(text, 180);
-
-          for (const chunk of chunks) {
-            if (activeNotifIdRef.current !== notif.id) break;
-
-            try {
-              if (lang.startsWith("male-")) {
-                await audioManagerRef.current.playSpeech(chunk, lang);
-              } else {
-                const ttsUrl = `/api/tts?voice=${lang}&text=${encodeURIComponent(chunk)}`;
-                await audioManagerRef.current.playCloud(ttsUrl);
-              }
-            } catch (err) {
-              console.error("TTS chunk playback failed:", err);
-            }
-          }
-
-          if (activeNotifIdRef.current === notif.id) {
-            onTTSDone();
-          }
-        }, 1000);
-      } else {
-        // No TTS: use fixed alert_duration
-        const duration = (settingsRef.current?.alert_duration || 5) * 1000;
-        addTimer(hideAndNext, duration);
-      }
+      addTimer(hideAndNext, remainingMs);
     },
-    [token, clearAllTimers, addTimer]
+    [ackNotification, addTimer, clearAllTimers, createFreshAlertState, loadAlertState, saveAlertState]
   );
 
-  // Stable polling effect
+  useEffect(() => {
+    showNotificationRef.current = showNotification;
+  }, [showNotification]);
+
+  const enqueueNotification = useCallback(
+    (notif: OverlayNotification, forceReplay = false) => {
+      if (!forceReplay && seenIdsRef.current.has(notif.id)) return;
+      seenIdsRef.current.add(notif.id);
+
+      if (typeof notif.amount !== "number" || isNaN(notif.amount) || notif.amount <= 0) {
+        ackNotification(notif.id);
+        return;
+      }
+
+      if (showingRef.current) {
+        queueRef.current.push({ notif, forceReplay });
+      } else {
+        showNotification({ notif, forceReplay });
+      }
+    },
+    [ackNotification, showNotification]
+  );
+
+  const fetchPendingNotifications = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const res = await fetch(`/api/overlay?token=${token}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (data.settings) {
+        settingsRef.current = data.settings;
+      }
+
+      if (data.notifications && data.notifications.length > 0) {
+        for (const notif of data.notifications as OverlayNotification[]) {
+          enqueueNotification(notif);
+        }
+      }
+    } catch {
+      // One-shot recovery fetch failure is non-fatal; websocket remains primary.
+    }
+  }, [token, enqueueNotification]);
+
+  // Websocket realtime effect. This is the primary overlay update path.
   useEffect(() => {
     if (!token) return;
 
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/overlay?token=${token}`);
-        if (!res.ok) return;
-        const data = await res.json();
+    let disposed = false;
+    let socket: RealtimeClientSocket | null = null;
 
-        if (data.settings) {
-          settingsRef.current = data.settings;
-        }
+    const toNotification = (payload: PublicDonationPayload): OverlayNotification => ({
+      id: payload.donationId,
+      donor_name: payload.donorName,
+      amount: payload.amount,
+      message: payload.message,
+    });
 
-        if (data.notifications && data.notifications.length > 0) {
-          for (const notif of data.notifications as OverlayNotification[]) {
-            if (seenIdsRef.current.has(notif.id)) continue;
-            seenIdsRef.current.add(notif.id);
-
-            if (
-              typeof notif.amount !== "number" ||
-              isNaN(notif.amount) ||
-              notif.amount <= 0
-            ) {
-              fetch(`/api/overlay?token=${token}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ donationId: notif.id }),
-              }).catch(() => {});
-              continue;
-            }
-
-            if (showingRef.current) {
-              queueRef.current.push(notif);
-            } else {
-              showNotification(notif);
-            }
-          }
-        }
-      } catch {
-        // ignore polling errors
+    const handleNotification = (event: unknown) => {
+      const realtimeEvent = event as RealtimeEvent<typeof REALTIME_EVENTS.OVERLAY_NOTIFICATION>;
+      if (realtimeEvent?.payload) {
+        console.debug("[overlay-audio] websocket notification received", {
+          eventId: realtimeEvent.eventId,
+          donationId: realtimeEvent.payload.donationId,
+        });
+        enqueueNotification(toNotification(realtimeEvent.payload));
       }
     };
 
-    const interval = setInterval(poll, 3000);
-    poll();
+    const handleReplay = (event: unknown) => {
+      const realtimeEvent = event as RealtimeEvent<typeof REALTIME_EVENTS.OVERLAY_REPLAY>;
+      if (realtimeEvent?.payload) enqueueNotification(toNotification(realtimeEvent.payload), true);
+    };
 
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+    const handleTest = (event: unknown) => {
+      const realtimeEvent = event as RealtimeEvent<typeof REALTIME_EVENTS.OVERLAY_TEST>;
+      if (realtimeEvent?.payload) enqueueNotification(toNotification(realtimeEvent.payload), true);
+    };
+
+    createRealtimeSocket()
+      .then((client) => {
+        if (disposed) {
+          client.disconnect();
+          return;
+        }
+
+        socket = client;
+        socketRef.current = client;
+
+        client.on("connect", () => {
+          client.emit("overlay:join", { token });
+          fetchPendingNotifications();
+        });
+        client.on(REALTIME_EVENTS.OVERLAY_NOTIFICATION, handleNotification);
+        client.on(REALTIME_EVENTS.OVERLAY_REPLAY, handleReplay);
+        client.on(REALTIME_EVENTS.OVERLAY_TEST, handleTest);
+
+        if (client.connected) {
+          client.emit("overlay:join", { token });
+          fetchPendingNotifications();
+        }
+      })
+      .catch((error) => {
+        console.warn("Realtime overlay connection unavailable; only one-shot recovery fetch remains:", error);
+      });
+
+    return () => {
+      disposed = true;
+      if (socket) {
+        socket.off(REALTIME_EVENTS.OVERLAY_NOTIFICATION, handleNotification);
+        socket.off(REALTIME_EVENTS.OVERLAY_REPLAY, handleReplay);
+        socket.off(REALTIME_EVENTS.OVERLAY_TEST, handleTest);
+        socket.disconnect();
+      }
+      if (socketRef.current === socket) socketRef.current = null;
+    };
+  }, [token, enqueueNotification, fetchPendingNotifications]);
+
+  // One-shot recovery fetch for pending notifications/settings. No polling.
+  useEffect(() => {
+    if (!token) return;
+    fetchPendingNotifications();
+  }, [token, fetchPendingNotifications]);
 
   if (!token) {
     return (
@@ -396,7 +393,9 @@ function OverlayContent() {
         <div
           style={{
             animation: isShowing
-              ? "overlaySlideIn 0.5s ease-out forwards"
+              ? isResumedAlert
+                ? "none"
+                : "overlaySlideIn 0.5s ease-out forwards"
               : "overlaySlideOut 0.5s ease-in forwards",
             width: 420,
             maxWidth: "90vw",
@@ -501,41 +500,6 @@ function OverlayContent() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {audioBlocked && (
-        <div
-          onClick={() => {
-            const dummyAudio = new Audio(
-              "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"
-            );
-            dummyAudio.play().catch(() => {});
-
-            if ("speechSynthesis" in window) {
-              const u = new SpeechSynthesisUtterance("");
-              u.volume = 0;
-              window.speechSynthesis.speak(u);
-            }
-
-            setAudioBlocked(false);
-          }}
-          style={{
-            position: "fixed",
-            bottom: "1rem",
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "rgba(239, 68, 68, 0.2)",
-            border: "1px solid rgba(239, 68, 68, 0.4)",
-            color: "#fca5a5",
-            padding: "4px 8px",
-            borderRadius: 6,
-            fontSize: "0.7rem",
-            cursor: "pointer",
-            zIndex: 9999,
-          }}
-        >
-          🔇 Klik di sini untuk izinkan suara
         </div>
       )}
     </div>

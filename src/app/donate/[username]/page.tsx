@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import ErrorAlert from "@/components/ErrorAlert";
 import { formatRupiah } from "@/lib/utils";
+import { createRealtimeSocket, type RealtimeClientSocket } from "@/lib/realtime/socket-client";
+import { REALTIME_EVENTS, type PaymentStatusPayload, type RealtimeEvent } from "@/lib/realtime/events";
 
 interface UserInfo {
   username: string;
@@ -16,11 +19,9 @@ interface UserInfo {
 
 type Stage = "form" | "qr" | "success";
 
-const PRESET_AMOUNTS = [5000, 10000, 20000, 50000, 100000, 200000];
-
 export default function DonatePage() {
   const params = useParams();
-  const username = params.username as string;
+  const username = params?.username as string;
 
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +51,7 @@ export default function DonatePage() {
     amount: number;
   } | null>(null);
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const socketRef = useRef<RealtimeClientSocket | null>(null);
 
   // Fetch user info
   useEffect(() => {
@@ -70,32 +71,77 @@ export default function DonatePage() {
   // Preset amounts filtered to fit within user's min/max
   const presetAmounts = user
     ? [5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000].filter(
-        (amt) => amt >= user.min_amount && amt <= user.max_amount
-      )
+      (amt) => amt >= user.min_amount && amt <= user.max_amount
+    )
     : [];
 
   // Cleanup poll on unmount
   useEffect(() => {
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      socketRef.current?.disconnect();
     };
   }, []);
 
-  const startPolling = (orderId: string) => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/donate/${orderId}`);
-        const data = await res.json();
-        if (data.paid) {
-          if (pollRef.current) clearInterval(pollRef.current);
-          setStage("success");
-        }
-      } catch {
-        // ignore polling errors
+  const checkPaymentStatusOnce = useCallback(async (orderId: string) => {
+    try {
+      const res = await fetch(`/api/donate/${orderId}`, { cache: "no-store" });
+      const data = await res.json();
+      if (data.paid) {
+        setStage("success");
       }
-    }, 3000);
-  };
+    } catch {
+      // Websocket is primary; one-shot recovery failure is non-fatal.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (stage !== "qr" || !qrData?.orderId) return;
+
+    let disposed = false;
+    let socket: RealtimeClientSocket | null = null;
+
+    const handleStatus = (event: unknown) => {
+      const realtimeEvent = event as RealtimeEvent<typeof REALTIME_EVENTS.PAYMENT_STATUS_CHANGED>;
+      const payload = realtimeEvent?.payload as PaymentStatusPayload | undefined;
+      if (!payload || payload.orderId !== qrData.orderId) return;
+
+      if (payload.paid) {
+        setStage("success");
+      }
+    };
+
+    createRealtimeSocket()
+      .then((client) => {
+        if (disposed) {
+          client.disconnect();
+          return;
+        }
+
+        socket = client;
+        socketRef.current = client;
+        client.on("connect", () => {
+          client.emit("payment:join", { orderId: qrData.orderId });
+          checkPaymentStatusOnce(qrData.orderId);
+        });
+        client.on(REALTIME_EVENTS.PAYMENT_STATUS_CHANGED, handleStatus);
+        if (client.connected) {
+          client.emit("payment:join", { orderId: qrData.orderId });
+          checkPaymentStatusOnce(qrData.orderId);
+        }
+      })
+      .catch((error) => {
+        console.warn("Realtime payment status unavailable; one-shot status checks remain:", error);
+      });
+
+    return () => {
+      disposed = true;
+      if (socket) {
+        socket.off(REALTIME_EVENTS.PAYMENT_STATUS_CHANGED, handleStatus);
+        socket.disconnect();
+      }
+      if (socketRef.current === socket) socketRef.current = null;
+    };
+  }, [stage, qrData?.orderId, checkPaymentStatusOnce]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +198,7 @@ export default function DonatePage() {
         amount: Math.floor(form.amount),
       });
       setStage("qr");
-      startPolling(data.donation.orderId);
+      checkPaymentStatusOnce(data.donation.orderId);
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
@@ -213,6 +259,7 @@ export default function DonatePage() {
                   }}
                 >
                   {user?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={user.avatar_url} alt={user.display_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <span style={{ fontWeight: 800 }}>{user?.display_name?.charAt(0)?.toUpperCase() || "?"}</span>
@@ -393,7 +440,6 @@ export default function DonatePage() {
               className="btn btn-ghost btn-sm"
               style={{ marginTop: "1rem" }}
               onClick={() => {
-                if (pollRef.current) clearInterval(pollRef.current);
                 setStage("form");
               }}
             >
@@ -426,9 +472,9 @@ export default function DonatePage() {
 
         {/* Footer */}
         <div style={{ textAlign: "center", marginTop: "2rem" }}>
-          <a href="/" className="nav-brand" style={{ fontSize: "0.875rem" }}>
+          <Link href="/" className="nav-brand" style={{ fontSize: "0.875rem" }}>
             💜 DonasiKu
-          </a>
+          </Link>
         </div>
       </div>
     </div>

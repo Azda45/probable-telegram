@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
+import { emitOverlayNotification } from "@/lib/realtime/socket-server";
 
 /**
  * POST /api/overlay/replay
  * Re-queue a past donation to show on the overlay again.
- * Sets shown_on_overlay = 0 so the overlay polling picks it up.
+ * Sets shown_on_overlay = 0 for REST recovery and emits a websocket replay event.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT d.id, d.donor_name, d.amount 
+      `SELECT d.id, d.donor_name, d.amount, d.message, t.order_id, t.paid_at
        FROM donations d
        JOIN transactions t ON d.id = t.donation_id
        WHERE d.id = ? AND d.user_id = ? AND t.transaction_status IN ('settlement','capture')`,
@@ -38,9 +39,20 @@ export async function POST(req: NextRequest) {
       [donationId, user.id]
     );
 
+    const donation = rows[0];
+    emitOverlayNotification({
+      donationId: donation.id,
+      orderId: donation.order_id,
+      userId: user.id,
+      donorName: donation.donor_name,
+      amount: donation.amount,
+      message: donation.message,
+      paidAt: donation.paid_at ? new Date(donation.paid_at).toISOString() : new Date().toISOString(),
+    }, "replay");
+
     return NextResponse.json({
       message: "Donasi akan ditampilkan ulang di overlay!",
-      donation: rows[0],
+      donation,
     });
   } catch (error: unknown) {
     console.error("Replay overlay error:", error);

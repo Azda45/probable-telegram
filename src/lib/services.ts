@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import { nanoid } from "nanoid";
 import pool from "./db";
-import { RowDataPacket, ResultSetHeader, QueryResult } from "mysql2";
+import { RowDataPacket } from "mysql2";
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || "secret";
 
@@ -20,8 +20,6 @@ export interface User {
   max_amount: number;
   alert_sound: string;
   alert_duration: number;
-  tts_enabled: boolean;
-  tts_voice: string;
   total_received: number;
   created_at: Date;
 }
@@ -81,14 +79,15 @@ export async function authenticateUser(
   const valid = await bcrypt.compare(password, user.password_hash);
   if (!valid) return null;
 
-  const { password_hash, ...rest } = user;
+  const rest = { ...user };
+  delete rest.password_hash;
   return rest as User;
 }
 
 export async function getUserById(id: string): Promise<User | null> {
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT id, username, email, display_name, avatar_url, bio, stream_key, overlay_token,
-            min_amount, max_amount, alert_sound, alert_duration, tts_enabled, tts_voice,
+            min_amount, max_amount, alert_sound, alert_duration,
             total_received, created_at
      FROM users WHERE id = ?`,
     [id]
@@ -99,7 +98,7 @@ export async function getUserById(id: string): Promise<User | null> {
 export async function getUserByUsername(username: string): Promise<User | null> {
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT id, username, email, display_name, avatar_url, bio, stream_key, overlay_token,
-            min_amount, max_amount, alert_sound, alert_duration, tts_enabled, tts_voice,
+            min_amount, max_amount, alert_sound, alert_duration,
             total_received, created_at
      FROM users WHERE username = ?`,
     [username]
@@ -109,7 +108,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
 
 export async function getUserByOverlayToken(token: string): Promise<User | null> {
   const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT id, username, display_name, overlay_token, alert_sound, alert_duration, tts_enabled, tts_voice
+    `SELECT id, username, display_name, overlay_token, alert_sound, alert_duration
      FROM users WHERE overlay_token = ?`,
     [token]
   );
@@ -118,7 +117,7 @@ export async function getUserByOverlayToken(token: string): Promise<User | null>
 
 export async function updateUserSettings(
   userId: string,
-  settings: Partial<Pick<User, "display_name" | "bio" | "min_amount" | "max_amount" | "alert_sound" | "alert_duration" | "tts_enabled" | "avatar_url" | "tts_voice">>
+  settings: Partial<Pick<User, "display_name" | "bio" | "min_amount" | "max_amount" | "alert_sound" | "alert_duration" | "avatar_url">>
 ): Promise<void> {
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -260,27 +259,76 @@ export async function updateDonationStatus(
   orderId: string,
   status: string,
   transactionId?: string
-): Promise<void> {
-  const paidAt = ["settlement", "capture"].includes(status)
-    ? new Date()
-    : null;
+): Promise<{
+  previousStatus: string;
+  currentStatus: string;
+  becamePaid: boolean;
+  statusChanged: boolean;
+  paidAt: Date | null;
+}> {
+  const paidStatuses = new Set(["settlement", "capture"]);
+  const requestedIsPaid = paidStatuses.has(status);
 
-  await pool.execute(
-    `UPDATE transactions SET transaction_status = ?, transaction_id = COALESCE(?, transaction_id), paid_at = COALESCE(?, paid_at), updated_at = NOW() WHERE order_id = ?`,
-    [status, transactionId || null, paidAt, orderId]
-  );
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
 
-  // Update user total_received – guarded to prevent double-increment on duplicate webhook calls
-  if (["settlement", "capture"].includes(status)) {
-    await pool.execute(
-      `UPDATE users u
-       JOIN donations d ON d.user_id = u.id
-       JOIN transactions t ON t.donation_id = d.id
-       SET u.total_received = u.total_received + d.amount
-       WHERE t.order_id = ? AND t.paid_at IS NOT NULL
-         AND (SELECT COUNT(*) FROM transactions t2 WHERE t2.order_id = ? AND t2.transaction_status IN ('settlement','capture')) = 1`,
-      [orderId, orderId]
+    const [rows] = await conn.execute<RowDataPacket[]>(
+      `SELECT t.transaction_status, t.paid_at, d.amount, d.user_id
+       FROM transactions t
+       JOIN donations d ON d.id = t.donation_id
+       WHERE t.order_id = ?
+       FOR UPDATE`,
+      [orderId]
     );
+
+    if (rows.length === 0) {
+      throw new Error(`Transaction not found for order ${orderId}`);
+    }
+
+    const row = rows[0];
+    const previousStatus = String(row.transaction_status);
+    const previousPaidAt = row.paid_at ? new Date(row.paid_at) : null;
+    const alreadyPaid = paidStatuses.has(previousStatus) && previousPaidAt !== null;
+
+    // Midtrans can retry or deliver older states after settlement. Once paid,
+    // keep the canonical paid state and only fill transaction_id when missing.
+    const currentStatus = alreadyPaid && !requestedIsPaid ? previousStatus : status;
+    const paidAt = requestedIsPaid ? previousPaidAt || new Date() : previousPaidAt;
+    const becamePaid = !alreadyPaid && requestedIsPaid;
+    const statusChanged = currentStatus !== previousStatus;
+
+    await conn.execute(
+      `UPDATE transactions
+       SET transaction_status = ?,
+           transaction_id = COALESCE(?, transaction_id),
+           paid_at = COALESCE(?, paid_at),
+           updated_at = NOW()
+       WHERE order_id = ?`,
+      [currentStatus, transactionId || null, paidAt, orderId]
+    );
+
+    if (becamePaid) {
+      await conn.execute(
+        `UPDATE users SET total_received = total_received + ? WHERE id = ?`,
+        [row.amount, row.user_id]
+      );
+    }
+
+    await conn.commit();
+
+    return {
+      previousStatus,
+      currentStatus,
+      becamePaid,
+      statusChanged,
+      paidAt,
+    };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
   }
 }
 

@@ -30,8 +30,6 @@ export default function DashboardPage() {
     alert_duration: 5,
     avatar_url: "",
     alert_sound: "default",
-    tts_enabled: true,
-    tts_voice: "",
     max_amount: 10000000,
   });
 
@@ -42,17 +40,15 @@ export default function DashboardPage() {
       const data = await res.json();
       setUser(data.user);
       setStats(data.stats);
-        setSettingsForm({
-          display_name: data.user.display_name || "",
-          bio: data.user.bio || "",
-          min_amount: data.user.min_amount || 1000,
-          alert_duration: data.user.alert_duration || 5,
-          avatar_url: data.user.avatar_url || "",
-          alert_sound: data.user.alert_sound || "default",
-          tts_enabled: data.user.tts_enabled ?? true,
-          tts_voice: data.user.tts_voice || "",
-          max_amount: data.user.max_amount || 10000000,
-        });
+      setSettingsForm({
+        display_name: data.user.display_name || "",
+        bio: data.user.bio || "",
+        min_amount: data.user.min_amount || 1000,
+        alert_duration: data.user.alert_duration || 5,
+        avatar_url: data.user.avatar_url || "",
+        alert_sound: data.user.alert_sound || "default",
+        max_amount: data.user.max_amount || 10000000,
+      });
     } catch {
       router.push("/login");
     } finally {
@@ -68,7 +64,7 @@ export default function DashboardPage() {
       if (filter !== "all") {
         url.searchParams.set("status", filter);
       }
-      
+
       const res = await fetch(url.toString());
       if (res.ok) {
         const data = await res.json();
@@ -82,8 +78,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchProfile();
-    fetchDonations(1, donationFilter);
+    queueMicrotask(() => {
+      fetchProfile();
+      fetchDonations(1, donationFilter);
+    });
   }, [fetchProfile, fetchDonations, donationFilter]);
 
   const handleLogout = async () => {
@@ -181,7 +179,7 @@ export default function DashboardPage() {
             <h1 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "0.25rem" }}>Dashboard</h1>
             <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>Selamat datang kembali, {user?.display_name}</p>
           </div>
-          
+
           <div style={{ display: "flex", gap: "0.75rem" }}>
             <button
               className="btn btn-secondary btn-sm"
@@ -403,45 +401,6 @@ export default function DashboardPage() {
                     <option value="none">Tanpa Suara</option>
                   </select>
                 </div>
-                <div className="input-group" style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-                  <input
-                    type="checkbox"
-                    id="tts"
-                    checked={settingsForm.tts_enabled}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, tts_enabled: e.target.checked })}
-                    style={{ width: 16, height: 16, accentColor: "var(--color-primary)" }}
-                  />
-                  <label htmlFor="tts" style={{ marginBottom: 0, cursor: "pointer" }}>Aktifkan Pembaca Pesan (Text-to-Speech)</label>
-                </div>
-                {settingsForm.tts_enabled && (
-                  <div className="input-group">
-                    <label>Bahasa & Varian Suara TTS</label>
-                    <select
-                      className="input"
-                      value={settingsForm.tts_voice || "id"}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, tts_voice: e.target.value })}
-                    >
-                      <optgroup label="👩 Suara Perempuan (Cloud)">
-                        <option value="id">👩 Indonesia (Indo A)</option>
-                        <option value="en">👩 English (US)</option>
-                        <option value="ja">👩 Jepang (Japan)</option>
-                        <option value="ko">👩 Korea (Korean)</option>
-                      </optgroup>
-                      <optgroup label="👨 Suara Laki-laki (Sistem Browser)">
-                        <option value="male-id">👨 Indonesia (Male)</option>
-                        <option value="male-en">👨 English (Male)</option>
-                      </optgroup>
-                      <optgroup label="🌐 Dialek Lain (Perempuan)">
-                        <option value="ms">🇲🇾 Malay</option>
-                        <option value="jv">🇮🇩 Jawa</option>
-                        <option value="su">🇮🇩 Sunda</option>
-                      </optgroup>
-                    </select>
-                    <small style={{ color: "var(--color-text-muted)", marginTop: "0.25rem", display: "block" }}>
-                      Pilih aksen bahasa yang akan digunakan untuk membaca pesan donasi.
-                    </small>
-                  </div>
-                )}
               </div>
               <button className="btn btn-primary" style={{ marginTop: "1.5rem" }} onClick={handleSaveSettings}>
                 💾 Simpan Pengaturan

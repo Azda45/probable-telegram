@@ -7,14 +7,13 @@ import Navbar from "@/components/Navbar";
 const FEATURES = [
   { icon: "📱", title: "QRIS Payment", desc: "Scan and pay from any e-wallet" },
   { icon: "🔔", title: "Real-time Overlay", desc: "Instant notifications for OBS" },
-  { icon: "🔊", title: "Smart TTS", desc: "Custom male and female voices" },
+  { icon: "🔊", title: "Instant Alert Sound", desc: "Cached low-latency OBS audio alerts" },
   { icon: "📊", title: "Analytics", desc: "Track your revenue growth" },
 ];
 
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ display_name: string } | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/user")
@@ -23,8 +22,7 @@ export default function HomePage() {
           const data = await r.json();
           setUser(data.user);
         }
-      })
-      .finally(() => setLoading(false));
+      });
   }, []);
 
   const handleLogout = async () => {
@@ -36,7 +34,7 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: "100vh" }}>
       <Navbar user={user} onLogout={handleLogout} />
-      
+
       <main className="container" style={{ paddingTop: "6rem", paddingBottom: "6rem" }}>
         {/* Hero Section */}
         <section style={{ textAlign: "center", marginBottom: "6rem" }} className="animate-fade-in">
@@ -50,7 +48,7 @@ export default function HomePage() {
           <p style={{ fontSize: "1.125rem", color: "var(--color-text-secondary)", maxWidth: "600px", margin: "0 auto 2.5rem", lineHeight: 1.6 }}>
             Solusi donasi QRIS real-time tercepat di Indonesia. Setup overlay OBS hanya dalam 2 menit.
           </p>
-          
+
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
             {user ? (
               <button className="btn btn-primary btn-lg" onClick={() => router.push("/dashboard")}>

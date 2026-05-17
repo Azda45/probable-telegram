@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySignatureKey } from "@/lib/midtrans";
 import { getDonationByOrderId, updateDonationStatus } from "@/lib/services";
 import { publishMessage, QUEUES } from "@/lib/rabbitmq";
+import { emitOverlayNotification, emitPaymentStatus } from "@/lib/realtime/socket-server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,12 +39,15 @@ export async function POST(req: NextRequest) {
       finalStatus = fraud_status === "accept" ? "capture" : "fraud";
     }
 
-    // Update donation status
-    await updateDonationStatus(order_id, finalStatus, transaction_id);
+    // Update donation status atomically. Only the first transition to paid
+    // should produce realtime-visible events; duplicate webhooks become no-ops.
+    const statusUpdate = await updateDonationStatus(order_id, finalStatus, transaction_id);
 
     // If payment successful, publish to overlay notification queue
-    if (["settlement", "capture"].includes(finalStatus)) {
+    if (statusUpdate.becamePaid) {
       console.log(`✅ Payment success for order: ${order_id}`);
+
+      const paidAt = statusUpdate.paidAt?.toISOString() || new Date().toISOString();
 
       try {
         await publishMessage(QUEUES.DONATION_PAID, {
@@ -53,20 +57,43 @@ export async function POST(req: NextRequest) {
           donorName: donation.donor_name,
           amount: donation.amount,
           message: donation.message,
-          paidAt: new Date().toISOString(),
+          paidAt,
         });
 
         await publishMessage(QUEUES.OVERLAY_NOTIFICATION, {
           type: "donation",
+          donationId: donation.id,
+          orderId: order_id,
           userId: donation.user_id,
           donorName: donation.donor_name,
           amount: donation.amount,
           message: donation.message,
-          timestamp: new Date().toISOString(),
+          timestamp: paidAt,
         });
+
       } catch (mqError) {
         console.warn("RabbitMQ publish failed (non-critical):", mqError);
       }
+
+      emitOverlayNotification({
+        donationId: donation.id,
+        orderId: order_id,
+        userId: donation.user_id,
+        donorName: donation.donor_name,
+        amount: donation.amount,
+        message: donation.message,
+        paidAt,
+      });
+
+      emitPaymentStatus({
+        orderId: order_id,
+        donationId: donation.id,
+        status: statusUpdate.currentStatus,
+        paid: true,
+        paidAt,
+      });
+    } else if (["settlement", "capture"].includes(statusUpdate.currentStatus)) {
+      console.log(`↩️ Duplicate paid webhook ignored for order: ${order_id}`);
     }
 
     return NextResponse.json({ status: "ok" });

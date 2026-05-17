@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { initDatabase } from "@/lib/schema";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     await initDatabase();
     return NextResponse.json({ message: "Database initialized successfully" });
