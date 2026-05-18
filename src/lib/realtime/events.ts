@@ -11,6 +11,7 @@ export const REALTIME_EVENTS = {
   OVERLAY_REPLAY: "overlay:replay",
   OVERLAY_TEST: "overlay:test",
   OVERLAY_ACK: "overlay:ack",
+  OVERLAY_SETTINGS_UPDATED: "overlay:settings_updated",
   STREAMER_TOTAL_CHANGED: "streamer:total_changed",
   ERROR: "error",
 } as const;
@@ -62,6 +63,10 @@ export interface OverlayAckPayload {
   displayedAt: string;
 }
 
+export interface OverlaySettingsUpdatedPayload {
+  userId: string;
+}
+
 export interface StreamerTotalChangedPayload {
   userId: string;
   totalReceived: number;
@@ -94,6 +99,7 @@ export type RealtimeEventMap = {
   [REALTIME_EVENTS.OVERLAY_REPLAY]: PublicDonationPayload;
   [REALTIME_EVENTS.OVERLAY_TEST]: PublicDonationPayload;
   [REALTIME_EVENTS.OVERLAY_ACK]: OverlayAckPayload;
+  [REALTIME_EVENTS.OVERLAY_SETTINGS_UPDATED]: OverlaySettingsUpdatedPayload;
   [REALTIME_EVENTS.STREAMER_TOTAL_CHANGED]: StreamerTotalChangedPayload;
   [REALTIME_EVENTS.ERROR]: RealtimeErrorPayload;
 };

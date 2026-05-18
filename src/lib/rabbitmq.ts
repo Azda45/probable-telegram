@@ -3,7 +3,7 @@ import amqplib from "amqplib";
 let connection: Awaited<ReturnType<typeof amqplib.connect>> | null = null;
 let channel: Awaited<ReturnType<Awaited<ReturnType<typeof amqplib.connect>>["createChannel"]>> | null = null;
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672";
+const RABBITMQ_URL = process.env.RABBITMQ_URL!;
 
 export const QUEUES = {
   DONATION_CREATED: "donation.created",

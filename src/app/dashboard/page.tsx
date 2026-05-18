@@ -3,10 +3,31 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import Toast, { showToast } from "@/components/Toast";
+import { toast } from "sonner";
 import StatCard from "@/components/StatCard";
 import CopyLink from "@/components/CopyLink";
 import DonationTable from "@/components/DonationTable";
+import { 
+  LayoutDashboard, 
+  Settings, 
+  CircleDollarSign, 
+  Banknote, 
+  Gift, 
+  TrendingUp, 
+  Zap, 
+  ExternalLink,
+  MonitorPlay,
+  Bell,
+  Save,
+  KeyRound,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  ListFilter,
+  User as UserIcon,
+  Eye,
+  EyeOff
+} from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import type { User, DonationRecord, DonationStats } from "@/lib/types";
 
@@ -20,9 +41,11 @@ export default function DashboardPage() {
   const [donations, setDonations] = useState<DonationRecord[]>([]);
   const [donationPage, setDonationPage] = useState(1);
   const [donationTotal, setDonationTotal] = useState(0);
-  const [donationFilter, setDonationFilter] = useState<"all" | "success" | "pending" | "failed">("all");
+  const [donationFilter, setDonationFilter] = useState<"all" | "success" | "pending" | "failed">("success");
   const [loading, setLoading] = useState(true);
   const [testingSend, setTestingSend] = useState(false);
+  const [showBalance, setShowBalance] = useState(false);
+  const [showRegenModal, setShowRegenModal] = useState(false);
   const [settingsForm, setSettingsForm] = useState({
     display_name: "",
     bio: "",
@@ -31,12 +54,13 @@ export default function DashboardPage() {
     avatar_url: "",
     alert_sound: "default",
     max_amount: 10000000,
+    overlay_style: "right",
   });
 
   const fetchProfile = useCallback(async () => {
     try {
       const res = await fetch("/api/user");
-      if (!res.ok) { router.push("/login"); return; }
+      if (!res.ok) { window.location.href = "/login"; return; }
       const data = await res.json();
       setUser(data.user);
       setStats(data.stats);
@@ -48,13 +72,14 @@ export default function DashboardPage() {
         avatar_url: data.user.avatar_url || "",
         alert_sound: data.user.alert_sound || "default",
         max_amount: data.user.max_amount || 10000000,
+        overlay_style: data.user.overlay_style || "right",
       });
     } catch {
-      router.push("/login");
+      window.location.href = "/login";
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, []);
 
   const fetchDonations = useCallback(async (page: number = 1, filter: "all" | "success" | "pending" | "failed" = "all") => {
     try {
@@ -84,6 +109,43 @@ export default function DashboardPage() {
     });
   }, [fetchProfile, fetchDonations, donationFilter]);
 
+  // Auto-hide balance: 30s if no activity, 60s if there is activity
+  useEffect(() => {
+    if (!showBalance) return;
+    
+    let timeout: NodeJS.Timeout;
+    let lastActivityReset = Date.now();
+
+    const hide = () => setShowBalance(false);
+
+    // Initial timer: 30 seconds
+    timeout = setTimeout(hide, 30000);
+
+    const handleActivity = () => {
+      const now = Date.now();
+      // Throttle resets to max 1 per second to avoid performance issues
+      if (now - lastActivityReset > 1000) {
+        lastActivityReset = now;
+        clearTimeout(timeout);
+        // If there is activity, extend timeout to 60 seconds
+        timeout = setTimeout(hide, 60000);
+      }
+    };
+
+    window.addEventListener("mousemove", handleActivity);
+    window.addEventListener("keydown", handleActivity);
+    window.addEventListener("click", handleActivity);
+    window.addEventListener("scroll", handleActivity);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("keydown", handleActivity);
+      window.removeEventListener("click", handleActivity);
+      window.removeEventListener("scroll", handleActivity);
+    };
+  }, [showBalance]);
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/");
@@ -99,14 +161,13 @@ export default function DashboardPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setUser(data.user);
-      showToast("success", "Pengaturan berhasil disimpan!");
+      toast.success("Pengaturan berhasil disimpan!");
     } catch (err: unknown) {
-      showToast("error", (err as Error).message);
+      toast.error((err as Error).message);
     }
   };
 
   const handleRegenKeys = async () => {
-    if (!confirm("Regenerate keys? Overlay kamu akan berhenti bekerja sampai kamu update URL-nya.")) return;
     try {
       const res = await fetch("/api/user", {
         method: "PATCH",
@@ -115,10 +176,11 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showToast("success", "Keys berhasil di-generate ulang!");
+      toast.success("Keys berhasil di-generate ulang!");
+      setShowRegenModal(false);
       fetchProfile();
     } catch (err: unknown) {
-      showToast("error", (err as Error).message);
+      toast.error((err as Error).message);
     }
   };
 
@@ -128,9 +190,9 @@ export default function DashboardPage() {
       const res = await fetch("/api/overlay/test", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showToast("success", `Test notifikasi dikirim! (${data.donation.donor_name} — Rp${data.donation.amount.toLocaleString("id-ID")})`);
+      toast.success(`Test notifikasi dikirim! (${data.donation.donor_name} — Rp${data.donation.amount.toLocaleString("id-ID")})`);
     } catch (err: unknown) {
-      showToast("error", (err as Error).message);
+      toast.error((err as Error).message);
     } finally {
       setTestingSend(false);
     }
@@ -145,18 +207,55 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showToast("success", `🔄 Replay: ${data.donation.donor_name} — ${formatRupiah(data.donation.amount)}`);
+      toast.success(`🔄 Replay: ${data.donation.donor_name} — ${formatRupiah(data.donation.amount)}`);
     } catch (err: unknown) {
-      showToast("error", (err as Error).message);
+      toast.error((err as Error).message);
     }
   };
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div className="shimmer" style={{ width: 48, height: 48, borderRadius: "50%", margin: "0 auto 1rem" }} />
-          <p style={{ color: "var(--color-text-muted)" }}>Memuat dashboard...</p>
+      <div className="min-h-screen">
+        {/* Render empty Navbar while loading */}
+        <Navbar user={null} />
+        
+        <div className="container mx-auto px-6">
+        {/* Header Skeleton */}
+        <div className="mt-10 mb-10" style={{ marginTop: "2.5rem", marginBottom: "2.5rem" }}>
+          <div className="shimmer h-9 w-48 rounded-lg mb-2" />
+          <div className="shimmer h-5 w-64 rounded-lg" />
+        </div>
+
+          {/* Quick Links Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" style={{ gap: "1rem", marginBottom: "2rem" }}>
+            <div className="card p-4 sm:p-5 shimmer border-transparent md:col-span-1">
+              <div className="shimmer h-3 w-24 rounded mb-2" />
+              <div className="shimmer h-9 w-full rounded mb-3" />
+              <div className="flex gap-2">
+                <div className="shimmer h-8 w-20 rounded" />
+                <div className="shimmer h-8 w-20 rounded" />
+              </div>
+            </div>
+            <div className="card p-4 sm:p-5 shimmer border-transparent md:col-span-2">
+              <div className="shimmer h-3 w-28 rounded mb-2" />
+              <div className="shimmer h-9 w-full rounded mb-3" />
+              <div className="flex gap-2">
+                <div className="shimmer h-8 w-20 rounded" />
+                <div className="shimmer h-8 w-28 rounded" />
+                <div className="shimmer h-8 w-28 rounded" />
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs Skeleton */}
+          <div className="flex gap-2 mb-8" style={{ marginBottom: "2rem" }}>
+            <div className="shimmer h-10 w-28 rounded-lg" />
+            <div className="shimmer h-10 w-28 rounded-lg" />
+            <div className="shimmer h-10 w-32 rounded-lg" />
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="card h-[120px] shimmer rounded-xl border-transparent mb-10" />
         </div>
       </div>
     );
@@ -168,64 +267,80 @@ export default function DashboardPage() {
   const overlayUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/overlay?token=${user.overlay_token}`;
 
   return (
-    <div style={{ minHeight: "100vh" }}>
-      <Toast />
+    <div className="min-h-screen">
       <Navbar user={user} onLogout={handleLogout} />
 
-      <div className="container" style={{ padding: "2rem 1.5rem" }}>
-        {/* Minimalist Header */}
-        <div style={{ marginBottom: "2.5rem", display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1.5rem" }}>
-          <div>
-            <h1 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "0.25rem" }}>Dashboard</h1>
-            <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>Selamat datang kembali, {user?.display_name}</p>
+      <div className="container mx-auto px-6">
+        <div className="mt-10 mb-10" style={{ marginTop: "2.5rem", marginBottom: "2.5rem" }}>
+            <h1 className="text-3xl font-bold mb-1">Dashboard</h1>
+            <p className="text-[var(--color-text-muted)] text-sm">Selamat datang kembali, {user?.display_name}</p>
           </div>
-
-          <div style={{ display: "flex", gap: "0.75rem" }}>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={handleTestOverlay}
-              disabled={testingSend}
-            >
-              {testingSend ? "..." : "🔔 Test Overlay"}
-            </button>
-            <a href={donateUrl} target="_blank" className="btn btn-primary btn-sm">
-              Lihat Halaman Donasi ↗
-            </a>
-          </div>
-        </div>
 
         {/* Quick Links Row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
-          <div className="card" style={{ padding: "1rem 1.25rem" }}>
-            <CopyLink label="Link Donasi" url={donateUrl} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8" style={{ gap: "1rem", marginBottom: "2rem" }}>
+          <div className="card p-4 sm:p-5 md:col-span-1">
+            <CopyLink
+              label="Link Donasi"
+              url={donateUrl}
+              actions={
+                <a href={donateUrl} target="_blank" className="btn btn-secondary btn-sm flex-1 flex items-center justify-center gap-2 min-w-[100px]">
+                  <ExternalLink className="w-4 h-4" />
+                  Buka
+                </a>
+              }
+            />
           </div>
-          <div className="card" style={{ padding: "1rem 1.25rem" }}>
-            <CopyLink label="URL Overlay" url={overlayUrl} />
+          <div className="card p-4 sm:p-5 md:col-span-2">
+            <CopyLink
+              label="URL Overlay"
+              url={overlayUrl}
+              actions={
+                <>
+                  <a href={overlayUrl} target="_blank" className="btn btn-secondary btn-sm flex-1 flex items-center justify-center gap-2 min-w-[100px]">
+                    <MonitorPlay className="w-4 h-4" />
+                    Buka Overlay
+                  </a>
+                  <button
+                    className="btn btn-secondary btn-sm flex-1 flex items-center justify-center gap-2 min-w-[100px]"
+                    onClick={handleTestOverlay}
+                    disabled={testingSend}
+                  >
+                    <Bell className="w-4 h-4" />
+                    {testingSend ? "..." : "Tes Notifikasi"}
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm flex-1 flex items-center justify-center gap-2 min-w-[100px]"
+                    onClick={() => setShowRegenModal(true)}
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    Regenerate
+                  </button>
+                </>
+              }
+            />
           </div>
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: "0.25rem", marginBottom: "2rem", background: "var(--color-surface-card)", padding: "0.25rem", borderRadius: 12, border: "1px solid var(--color-border)", width: "fit-content" }}>
+        <div 
+          className="bg-[var(--color-surface-card)] p-1 rounded-xl border border-[var(--color-border)] w-fit"
+          style={{ display: "flex", gap: "0.25rem", marginBottom: "2rem" }}
+        >
           {([
-            { id: "overview" as Tab, label: "📊 Overview" },
-            { id: "donations" as Tab, label: "💰 Donasi" },
-            { id: "settings" as Tab, label: "⚙️ Pengaturan" },
+            { id: "overview" as Tab, label: "Overview", icon: <LayoutDashboard className="w-4 h-4" /> },
+            { id: "donations" as Tab, label: "Donasi", icon: <CircleDollarSign className="w-4 h-4" /> },
+            { id: "settings" as Tab, label: "Pengaturan", icon: <Settings className="w-4 h-4" /> },
           ]).map((t) => (
             <button
               key={t.id}
               onClick={() => { setTab(t.id); if (t.id === "donations") fetchDonations(); }}
-              style={{
-                padding: "0.625rem 1.25rem",
-                borderRadius: 10,
-                border: "none",
-                background: tab === t.id ? "var(--color-primary)" : "transparent",
-                color: tab === t.id ? "white" : "var(--color-text-secondary)",
-                fontWeight: 600,
-                fontSize: "0.8125rem",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
+              className={`btn btn-sm border-none transition-all duration-200 ${
+                tab === t.id 
+                  ? "bg-[var(--color-primary)] text-white shadow-sm" 
+                  : "bg-transparent text-[var(--color-text-secondary)] hover:text-white"
+              }`}
             >
+              {t.icon}
               {t.label}
             </button>
           ))}
@@ -234,32 +349,51 @@ export default function DashboardPage() {
         {/* Overview Tab */}
         {tab === "overview" && stats && (
           <div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "2.5rem" }}>
-              <StatCard icon="💰" value={formatRupiah(stats.totalAmount)} label="Total" />
-              <StatCard icon="🎁" value={String(stats.totalDonations)} label="Donasi" />
-              <StatCard icon="📈" value={formatRupiah(stats.todayAmount)} label="Hari Ini" />
-              <StatCard icon="🔥" value={String(stats.todayDonations)} label="Sesi Ini" />
+            <div className="card mb-10 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/5 border-violet-500/20 overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                <Banknote className="w-32 h-32" />
+              </div>
+              <div className="relative z-10 flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-violet-500/20 flex items-center justify-center text-violet-400 shadow-inner">
+                  <Banknote className="w-7 h-7" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-violet-400/80 mb-1 uppercase tracking-wider">Total Pendapatan</p>
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-4xl font-bold tracking-tight">
+                      {showBalance ? formatRupiah(stats.totalAmount) : "Rp ••••••••"}
+                    </h2>
+                    <button 
+                      onClick={() => setShowBalance(!showBalance)} 
+                      className="text-violet-400/60 hover:text-violet-400 transition-colors focus:outline-none"
+                      title={showBalance ? "Sembunyikan Saldo" : "Tampilkan Saldo"}
+                    >
+                      {showBalance ? <EyeOff className="w-7 h-7" /> : <Eye className="w-7 h-7" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {stats.topDonors.length > 0 && (
               <div className="card">
-                <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: "1.25rem" }}>🏆 Top Donors</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <h3 className="text-lg font-bold mb-5">🏆 Top Donors</h3>
+                <div className="flex flex-col gap-3">
                   {stats.topDonors.map((d, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.75rem", borderRadius: 10, background: "var(--color-surface-elevated)" }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: "50%",
-                        background: i === 0 ? "linear-gradient(135deg, #f59e0b, #fbbf24)" : i === 1 ? "linear-gradient(135deg, #94a3b8, #cbd5e1)" : i === 2 ? "linear-gradient(135deg, #b45309, #d97706)" : "var(--color-surface-hover)",
-                        display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.8125rem",
-                        color: i < 3 ? "#0f0f23" : "var(--color-text-secondary)",
-                      }}>
+                    <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-[var(--color-surface-elevated)]">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center font-extrabold text-[13px] ${
+                        i === 0 ? "bg-gradient-to-br from-amber-500 to-amber-400 text-[#0f0f23]" :
+                        i === 1 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-[#0f0f23]" :
+                        i === 2 ? "bg-gradient-to-br from-amber-700 to-amber-600 text-[#0f0f23]" :
+                        "bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]"
+                      }`}>
                         {i + 1}
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: "0.9375rem" }}>{d.donor_name}</div>
-                        <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{d.count}x donasi</div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-[15px]">{d.donor_name}</div>
+                        <div className="text-xs text-[var(--color-text-muted)]">{d.count}x donasi</div>
                       </div>
-                      <div style={{ fontWeight: 700, color: "var(--color-success)" }}>{formatRupiah(d.total)}</div>
+                      <div className="font-bold text-[var(--color-success)]">{formatRupiah(d.total)}</div>
                     </div>
                   ))}
                 </div>
@@ -271,39 +405,6 @@ export default function DashboardPage() {
         {/* Donations Tab */}
         {tab === "donations" && (
           <div>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", overflowX: "auto", paddingBottom: "0.5rem" }}>
-              {(
-                [
-                  { id: "all", label: "Semua Donasi" },
-                  { id: "success", label: "✅ Berhasil" },
-                  { id: "pending", label: "⏳ Menunggu" },
-                  { id: "failed", label: "❌ Gagal/Batal" },
-                ] as const
-              ).map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => {
-                    setDonationFilter(f.id);
-                    fetchDonations(1, f.id);
-                  }}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    borderRadius: 20,
-                    border: "none",
-                    background: donationFilter === f.id ? "var(--color-primary)" : "var(--color-surface-elevated)",
-                    color: donationFilter === f.id ? "white" : "var(--color-text-secondary)",
-                    fontWeight: 600,
-                    fontSize: "0.8125rem",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-
             <DonationTable
               donations={donations}
               page={donationPage}
@@ -317,108 +418,152 @@ export default function DashboardPage() {
 
         {/* Settings Tab */}
         {tab === "settings" && (
-          <div style={{ display: "grid", gap: "1.5rem", maxWidth: 600 }}>
-            <div className="card">
-              <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: "1.25rem" }}>Profil</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                <div className="input-group">
-                  <label>Nama Tampilan</label>
-                  <input
-                    className="input"
-                    value={settingsForm.display_name}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, display_name: e.target.value })}
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Bio</label>
-                  <textarea
-                    className="input"
-                    value={settingsForm.bio}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, bio: e.target.value })}
-                    placeholder="Ceritakan tentang dirimu..."
-                    rows={3}
-                  />
-                </div>
-                <div className="input-group">
-                  <label>URL Avatar</label>
-                  <input
-                    className="input"
-                    value={settingsForm.avatar_url}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, avatar_url: e.target.value })}
-                    placeholder="https://example.com/avatar.jpg"
-                  />
-                  <small style={{ color: "var(--color-text-muted)", marginTop: "0.25rem", display: "block" }}>
-                    Masukkan link URL gambar untuk foto profilmu.
-                  </small>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start max-w-5xl" style={{ gap: "1.5rem" }}>
+            {/* Left Column */}
+            <div className="flex flex-col gap-6">
+              <div className="card h-full">
+                <h3 className="text-lg font-bold mb-5 flex items-center gap-2">
+                  <UserIcon className="w-5 h-5 text-[var(--color-primary)]" /> Profil
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[13px] font-medium text-[var(--color-text-secondary)] ml-1">Nama Tampilan</label>
+                    <input
+                      className="input"
+                      value={settingsForm.display_name}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, display_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[13px] font-medium text-[var(--color-text-secondary)] ml-1">URL Avatar</label>
+                    <input
+                      className="input"
+                      value={settingsForm.avatar_url}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, avatar_url: e.target.value })}
+                      placeholder="https://example.com/avatar.jpg"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[13px] font-medium text-[var(--color-text-secondary)] ml-1">Bio</label>
+                    <textarea
+                      className="input"
+                      value={settingsForm.bio}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, bio: e.target.value })}
+                      placeholder="Ceritakan tentang dirimu..."
+                      rows={4}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="card">
-              <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: "1.25rem" }}>Pengaturan Donasi</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-                <div className="input-group">
-                  <label>Minimal Donasi (Rp)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1000}
-                    step={1000}
-                    value={settingsForm.min_amount}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, min_amount: parseInt(e.target.value) || 1000 })}
-                  />
+            {/* Right Column */}
+            <div className="flex flex-col gap-6">
+              <div className="card">
+                <h3 className="text-lg font-bold mb-5 flex items-center gap-2">
+                  <CircleDollarSign className="w-5 h-5 text-[var(--color-primary)]" /> Pengaturan Donasi
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-medium text-[var(--color-text-secondary)] ml-1">Minimal Donasi (Rp)</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1000}
+                      step={1000}
+                      value={settingsForm.min_amount}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, min_amount: parseInt(e.target.value) || 1000 })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-medium text-[var(--color-text-secondary)] ml-1">Maksimal Donasi (Rp)</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1000}
+                      step={1000}
+                      value={settingsForm.max_amount}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, max_amount: parseInt(e.target.value) || 10000000 })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-medium text-[var(--color-text-secondary)] ml-1">Durasi Alert (detik)</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={3}
+                      max={30}
+                      value={settingsForm.alert_duration}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, alert_duration: parseInt(e.target.value) || 5 })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-medium text-[var(--color-text-secondary)] ml-1">Suara Notifikasi</label>
+                    <select
+                      className="input"
+                      value={settingsForm.alert_sound}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, alert_sound: e.target.value })}
+                    >
+                      <option value="default">Default (Ting!)</option>
+                      <option value="none">Tanpa Suara</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[13px] font-medium text-[var(--color-text-secondary)] ml-1">Gaya Overlay (Shadow)</label>
+                    <select
+                      className="input"
+                      value={settingsForm.overlay_style}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, overlay_style: e.target.value })}
+                    >
+                      <option value="right">Kanan Atas (Default)</option>
+                      <option value="left">Kiri Atas</option>
+                      <option value="none">Datar / Tanpa Shadow Biasa</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="input-group">
-                  <label>Maksimal Donasi (Rp)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1000}
-                    step={1000}
-                    value={settingsForm.max_amount}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, max_amount: parseInt(e.target.value) || 10000000 })}
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Durasi Alert (detik)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={3}
-                    max={30}
-                    value={settingsForm.alert_duration}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, alert_duration: parseInt(e.target.value) || 5 })}
-                  />
-                </div>
-                <div className="input-group">
-                  <label>Suara Notifikasi</label>
-                  <select
-                    className="input"
-                    value={settingsForm.alert_sound}
-                    onChange={(e) => setSettingsForm({ ...settingsForm, alert_sound: e.target.value })}
-                  >
-                    <option value="default">Default (Ting!)</option>
-                    <option value="none">Tanpa Suara</option>
-                  </select>
+                <div className="mt-6 pt-5 border-t border-[var(--color-border)] flex justify-end">
+                  <button className="btn btn-primary flex items-center gap-2" onClick={handleSaveSettings}>
+                    <Save className="w-4 h-4" />
+                    Simpan Pengaturan
+                  </button>
                 </div>
               </div>
-              <button className="btn btn-primary" style={{ marginTop: "1.5rem" }} onClick={handleSaveSettings}>
-                💾 Simpan Pengaturan
-              </button>
-            </div>
-
-            <div className="card" style={{ borderColor: "rgba(239,68,68,0.2)" }}>
-              <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: "0.5rem" }}>🔑 Keamanan</h3>
-              <p style={{ fontSize: "0.8125rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>
-                Regenerate keys akan membuat overlay URL dan stream key baru. Kamu perlu update URL di OBS.
-              </p>
-              <button className="btn btn-danger btn-sm" onClick={handleRegenKeys}>
-                Regenerate Keys
-              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Regenerate Keys Modal */}
+      {showRegenModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 mb-4 mx-auto">
+                <KeyRound className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-center mb-2">Regenerate URL Overlay?</h3>
+              <p className="text-[var(--color-text-secondary)] text-center text-sm mb-6">
+                Tindakan ini akan mengganti token rahasia Anda. <strong className="text-red-400">URL overlay yang lama tidak akan bisa digunakan lagi.</strong> Anda harus memperbarui URL di OBS/Streamlabs setelah melakukan ini.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  className="btn btn-secondary w-full" 
+                  onClick={() => setShowRegenModal(false)}
+                >
+                  Batal
+                </button>
+                <button 
+                  className="btn btn-danger w-full flex items-center justify-center gap-2" 
+                  onClick={handleRegenKeys}
+                >
+                  <KeyRound className="w-4 h-4" />
+                  Regenerate
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

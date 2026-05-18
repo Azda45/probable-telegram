@@ -1,37 +1,39 @@
 "use client";
 
-import { showToast } from "./Toast";
+import { toast } from "sonner";
+import { Copy } from "lucide-react";
 
 interface CopyLinkProps {
   label: string;
   url: string;
+  actions?: React.ReactNode;
 }
 
-export default function CopyLink({ label, url }: CopyLinkProps) {
+export default function CopyLink({ label, url, actions }: CopyLinkProps) {
   const handleCopy = () => {
     navigator.clipboard.writeText(url);
-    showToast("success", `${label} berhasil disalin!`);
+    toast.success(`${label} berhasil disalin!`);
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", width: "100%" }}>
-      <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+    <div className="flex flex-col gap-1 w-full">
+      <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
         {label}
       </label>
-      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-        <input
-          readOnly
-          value={url}
-          className="input"
-          style={{ height: 36, fontSize: "0.8125rem", background: "var(--color-surface)", borderStyle: "dashed" }}
-        />
+      <input
+        readOnly
+        value={url}
+        className="input h-9 text-[13px] bg-[var(--color-surface)] border-dashed"
+      />
+      <div className="flex flex-wrap gap-2 mt-2">
         <button
           onClick={handleCopy}
-          className="btn btn-secondary btn-sm"
-          style={{ height: 36, padding: "0 1rem", flexShrink: 0 }}
+          className="btn btn-secondary btn-sm flex-1 flex items-center justify-center gap-2 min-w-[100px]"
         >
+          <Copy className="w-4 h-4" />
           Salin
         </button>
+        {actions}
       </div>
     </div>
   );

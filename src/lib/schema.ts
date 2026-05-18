@@ -18,6 +18,7 @@ export async function initDatabase(): Promise<void> {
         min_amount INT DEFAULT 1000,
         alert_sound VARCHAR(255) DEFAULT 'default',
         alert_duration INT DEFAULT 5,
+        overlay_style VARCHAR(20) DEFAULT 'right',
         total_received BIGINT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

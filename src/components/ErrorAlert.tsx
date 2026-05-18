@@ -8,17 +8,7 @@ export default function ErrorAlert({ message }: ErrorAlertProps) {
   if (!message) return null;
 
   return (
-    <div
-      style={{
-        padding: "0.75rem 1rem",
-        background: "rgba(239,68,68,0.1)",
-        border: "1px solid rgba(239,68,68,0.2)",
-        borderRadius: 10,
-        color: "#f87171",
-        fontSize: "0.875rem",
-        marginBottom: "1.5rem",
-      }}
-    >
+    <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm mb-6">
       {message}
     </div>
   );

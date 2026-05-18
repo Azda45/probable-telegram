@@ -50,7 +50,7 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit}>
         <ErrorAlert message={error} />
 
-        <div className="input-group" style={{ marginBottom: "1.25rem" }}>
+        <div className="input-group mb-5">
           <label>Nama Tampilan</label>
           <input
             className="input"
@@ -62,7 +62,7 @@ export default function RegisterPage() {
           />
         </div>
 
-        <div className="input-group" style={{ marginBottom: "1.25rem" }}>
+        <div className="input-group mb-5">
           <label>Username</label>
           <input
             className="input"
@@ -79,12 +79,12 @@ export default function RegisterPage() {
             minLength={3}
             maxLength={30}
           />
-          <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
+          <span className="text-xs text-[var(--color-text-muted)] mt-1 inline-block">
             Link donasi: donasiku.com/<strong>{form.username || "username"}</strong>
           </span>
         </div>
 
-        <div className="input-group" style={{ marginBottom: "1.25rem" }}>
+        <div className="input-group mb-5">
           <label>Email</label>
           <input
             className="input"
@@ -96,7 +96,7 @@ export default function RegisterPage() {
           />
         </div>
 
-        <div className="input-group" style={{ marginBottom: "1.5rem" }}>
+        <div className="input-group mb-6">
           <label>Password</label>
           <input
             className="input"
@@ -111,9 +111,8 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          className="btn btn-primary"
+          className="btn btn-primary w-full p-3.5 mb-6"
           disabled={loading}
-          style={{ width: "100%", padding: "0.875rem" }}
         >
           {loading ? "Mendaftarkan..." : "🚀 Daftar Sekarang"}
         </button>

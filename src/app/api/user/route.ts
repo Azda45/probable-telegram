@@ -29,7 +29,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { display_name, bio, min_amount, max_amount, alert_sound, alert_duration, avatar_url } = body;
+    const { display_name, bio, min_amount, max_amount, alert_sound, alert_duration, avatar_url, overlay_style } = body;
 
     await updateUserSettings(user.id, {
       display_name,
@@ -39,9 +39,16 @@ export async function PUT(req: NextRequest) {
       alert_sound,
       alert_duration,
       avatar_url,
+      overlay_style,
     });
 
     const updated = await getUserById(user.id);
+    try {
+      const { emitOverlaySettingsUpdated } = await import("@/lib/realtime/socket-server");
+      emitOverlaySettingsUpdated(user.id);
+    } catch (e) {
+      console.warn("Failed to emit overlay settings update event", e);
+    }
     return NextResponse.json({ user: updated, message: "Pengaturan berhasil disimpan" });
   } catch (error: unknown) {
     console.error("Update profile error:", error);

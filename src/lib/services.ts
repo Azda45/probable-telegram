@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 import pool from "./db";
 import { RowDataPacket } from "mysql2";
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "secret";
+const JWT_SECRET = process.env.NEXTAUTH_SECRET!;
 
 export interface User {
   id: string;
@@ -20,6 +20,7 @@ export interface User {
   max_amount: number;
   alert_sound: string;
   alert_duration: number;
+  overlay_style: string;
   total_received: number;
   created_at: Date;
 }
@@ -87,7 +88,7 @@ export async function authenticateUser(
 export async function getUserById(id: string): Promise<User | null> {
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT id, username, email, display_name, avatar_url, bio, stream_key, overlay_token,
-            min_amount, max_amount, alert_sound, alert_duration,
+            min_amount, max_amount, alert_sound, alert_duration, overlay_style,
             total_received, created_at
      FROM users WHERE id = ?`,
     [id]
@@ -98,7 +99,7 @@ export async function getUserById(id: string): Promise<User | null> {
 export async function getUserByUsername(username: string): Promise<User | null> {
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT id, username, email, display_name, avatar_url, bio, stream_key, overlay_token,
-            min_amount, max_amount, alert_sound, alert_duration,
+            min_amount, max_amount, alert_sound, alert_duration, overlay_style,
             total_received, created_at
      FROM users WHERE username = ?`,
     [username]
@@ -108,7 +109,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
 
 export async function getUserByOverlayToken(token: string): Promise<User | null> {
   const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT id, username, display_name, overlay_token, alert_sound, alert_duration
+    `SELECT id, username, display_name, overlay_token, alert_sound, alert_duration, overlay_style
      FROM users WHERE overlay_token = ?`,
     [token]
   );
@@ -117,7 +118,7 @@ export async function getUserByOverlayToken(token: string): Promise<User | null>
 
 export async function updateUserSettings(
   userId: string,
-  settings: Partial<Pick<User, "display_name" | "bio" | "min_amount" | "max_amount" | "alert_sound" | "alert_duration" | "avatar_url">>
+  settings: Partial<Pick<User, "display_name" | "bio" | "min_amount" | "max_amount" | "alert_sound" | "alert_duration" | "avatar_url" | "overlay_style">>
 ): Promise<void> {
   const fields: string[] = [];
   const values: unknown[] = [];
@@ -197,11 +198,12 @@ export async function createDonation(data: {
     await conn.beginTransaction();
 
     await conn.execute(
-      `INSERT INTO donations (id, user_id, donor_name, donor_email, amount, message, shown_on_overlay)
-       VALUES (?, ?, ?, ?, ?, ?, 0)`,
+      `INSERT INTO donations (id, user_id, order_id, donor_name, donor_email, amount, message, shown_on_overlay)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
       [
         id,
         data.userId,
+        data.orderId,
         sanitizedName,
         sanitizedEmail,
         amount,

@@ -10,6 +10,7 @@ export interface User {
   min_amount: number;
   max_amount: number;
   alert_duration: number;
+  overlay_style: string;
   total_received: number;
   bio: string | null;
   avatar_url: string | null;

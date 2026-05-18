@@ -20,39 +20,32 @@ export default function AuthFormLayout({
   footerLinkHref,
 }: AuthFormLayoutProps) {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "2rem 1rem",
-        background: "var(--color-surface)",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-          <Link href="/" style={{ textDecoration: "none", fontSize: "1.5rem", fontWeight: 700, color: "var(--color-text-primary)" }}>
-            <span style={{ color: "var(--color-primary)" }}>💜</span> DonasiKu
+    <div className="min-h-screen flex items-center justify-center py-8 px-4 bg-[var(--color-surface)]">
+      <div className="w-full max-w-[400px]">
+        <div className="text-center mb-10">
+          <Link href="/" className="no-underline text-2xl font-bold text-[var(--color-text-primary)]">
+            <span className="text-[var(--color-primary)]">💜</span> DonasiKu
           </Link>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginTop: "2rem", marginBottom: "0.5rem" }}>
+          <h1 className="text-2xl font-bold mt-8 mb-2">
             {title}
           </h1>
-          <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+          <p className="text-sm text-[var(--color-text-muted)]">
             {subtitle}
           </p>
         </div>
 
-        <div className="card" style={{ padding: "2rem" }}>
+        <div className="card p-8">
           {children}
-        </div>
 
-        <p style={{ textAlign: "center", marginTop: "2rem", fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
-          {footerText}{" "}
-          <Link href={footerLinkHref} style={{ color: "var(--color-primary)", textDecoration: "none", fontWeight: 600 }}>
-            {footerLinkText}
-          </Link>
-        </p>
+          <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid var(--color-border)" }}>
+            <p className="text-center text-sm text-[var(--color-text-muted)]">
+              {footerText}{" "}
+              <Link href={footerLinkHref} className="text-[var(--color-primary)] no-underline font-semibold">
+                {footerLinkText}
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

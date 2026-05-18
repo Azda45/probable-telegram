@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
     settings: {
       alert_sound: user.alert_sound,
       alert_duration: user.alert_duration,
+      overlay_style: user.overlay_style,
     },
   });
 }

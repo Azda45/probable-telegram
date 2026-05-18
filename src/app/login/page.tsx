@@ -45,7 +45,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit}>
         <ErrorAlert message={error} />
 
-        <div className="input-group" style={{ marginBottom: "1.25rem" }}>
+        <div className="input-group mb-5">
           <label>Username atau Email</label>
           <input
             className="input"
@@ -57,7 +57,7 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="input-group" style={{ marginBottom: "1.5rem" }}>
+        <div className="input-group mb-6">
           <label>Password</label>
           <input
             className="input"
@@ -71,9 +71,8 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          className="btn btn-primary"
+          className="btn btn-primary w-full p-3.5 mb-6"
           disabled={loading}
-          style={{ width: "100%", padding: "0.875rem" }}
         >
           {loading ? "Memproses..." : "Masuk"}
         </button>

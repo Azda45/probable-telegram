@@ -175,3 +175,19 @@ export function emitPaymentStatus(payload: PaymentStatusPayload) {
   );
   return true;
 }
+
+export function emitOverlaySettingsUpdated(userId: string) {
+  const io = getSocketServer();
+  if (!io) return false;
+
+  io.to(REALTIME_ROOMS.overlay(userId)).emit(
+    REALTIME_EVENTS.OVERLAY_SETTINGS_UPDATED,
+    createRealtimeEnvelope(
+      REALTIME_EVENTS.OVERLAY_SETTINGS_UPDATED,
+      { userId },
+      `${REALTIME_EVENTS.OVERLAY_SETTINGS_UPDATED}:${userId}:${Date.now()}`
+    )
+  );
+  return true;
+}
+

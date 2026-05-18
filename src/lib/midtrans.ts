@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY || "";
+const MIDTRANS_SERVER_KEY = process.env.MIDTRANS_SERVER_KEY!;
 const IS_PRODUCTION = process.env.MIDTRANS_IS_PRODUCTION === "true";
 
 const BASE_URL = IS_PRODUCTION
@@ -61,7 +61,7 @@ export async function createQrisCharge(
     },
     gopay: {
       enable_callback: true,
-      callback_url: `${process.env.APP_URL || "http://localhost:3000"}/donation/success`,
+      callback_url: `${process.env.APP_URL}/donation/success`,
     },
   };
 
