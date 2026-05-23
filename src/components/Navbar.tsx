@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getAvatarUrl } from "@/shared/avatar";
 
 interface NavbarProps {
   user?: { display_name: string; avatar_url?: string | null } | null;
@@ -10,6 +12,7 @@ interface NavbarProps {
 
 export default function Navbar({ user, onLogout }: NavbarProps) {
   const router = useRouter();
+  const avatarUrl = user ? getAvatarUrl(user.display_name, user.avatar_url) : "";
 
   return (
     <nav className="border-b border-[var(--color-border)] bg-[var(--color-surface)] py-4">
@@ -21,13 +24,17 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           {user ? (
             <>
               <div className="relative group">
-                <button 
-                  className="flex items-center gap-3 md:gap-4 p-1.5 pr-3 rounded-full hover:bg-slate-800/50 border border-transparent hover:border-slate-700/50 transition-all duration-200 cursor-default"
+                <button
+                  type="button"
+                  className="flex items-center gap-3 md:gap-4 p-1.5 pr-3 rounded-full hover:bg-slate-800/50 border border-transparent hover:border-slate-700/50 transition-all duration-200 cursor-pointer"
                 >
                   <div className="w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden bg-slate-800 border border-slate-700/50 shadow-sm flex-shrink-0">
-                    <img 
-                      src={user.avatar_url || `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.display_name}&backgroundColor=b6e3f4,c0aede,d1d4f9`} 
+                    <Image
+                      src={avatarUrl}
                       alt={`${user.display_name}'s avatar`}
+                      width={44}
+                      height={44}
+                      unoptimized
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -53,8 +60,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                        <span className="block text-sm font-bold truncate">{user.display_name}</span>
                     </div>
                     <div className="p-2">
-                      <button 
-                        onClick={() => router.push('/dashboard')}
+                      <button
+                        type="button"
+                        onClick={() => router.push("/dashboard")}
                         className="w-full text-left !pl-6 !pr-4 !py-3 text-[15px] font-medium hover:bg-violet-500/10 hover:text-violet-400 rounded-lg transition-colors flex items-center gap-3 cursor-pointer"
                       >
                         <svg className="w-5 h-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,8 +72,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                       </button>
                     </div>
                     <div className="p-2 border-t border-[var(--color-border)]">
-                      <button 
-                        onClick={() => { if(onLogout) onLogout(); }}
+                      <button
+                        type="button"
+                        onClick={() => { if (onLogout) onLogout(); }}
                         className="w-full text-left !pl-6 !pr-4 !py-3 text-[15px] font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors flex items-center gap-3 cursor-pointer"
                       >
                         <svg className="w-5 h-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,14 +89,16 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </>
           ) : (
             <>
-              <button 
-                className="btn btn-secondary btn-sm !rounded-lg" 
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm !rounded-lg"
                 onClick={() => router.push("/login")}
               >
                 Masuk
               </button>
-              <button 
-                className="btn btn-primary btn-sm !rounded-lg" 
+              <button
+                type="button"
+                className="btn btn-primary btn-sm !rounded-lg"
                 onClick={() => router.push("/register")}
               >
                 Daftar

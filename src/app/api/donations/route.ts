@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth";
-import { getUserDonations } from "@/lib/services";
+import { getAuthUser } from "@/be/auth";
+import { getUserDonations } from "@/be/services";
+import { DonationListQuerySchema } from "@/shared/validation";
+import { apiErrorResponse, validationErrorResponse } from "@/be/security/request-security";
 
 export async function GET(req: NextRequest) {
   try {
     const user = await getAuthUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return apiErrorResponse(req, { error: "Unauthorized" }, 401);
     }
 
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const status = searchParams.get("status") || undefined;
+    const parsed = DonationListQuerySchema.safeParse({
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
+      status: searchParams.get("status") ?? undefined,
+    });
+    if (!parsed.success) return validationErrorResponse(req);
+
+    const { page, limit, status } = parsed.data;
 
     const result = await getUserDonations(user.id, page, limit, status);
 
@@ -24,6 +31,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("Get donations error:", error);
-    return NextResponse.json({ error: "Gagal mengambil data donasi" }, { status: 500 });
+    return apiErrorResponse(req, { error: "Gagal mengambil data donasi" }, 500);
   }
 }

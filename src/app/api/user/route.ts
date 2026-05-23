@@ -1,78 +1,108 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth";
-import { getUserById, getDonationStats, updateUserSettings, regenerateKeys } from "@/lib/services";
+import { getAuthUser } from "@/be/auth";
+import { getUserById, getDonationStats, updateUserSettings, regenerateKeys, getOverlaySettingsByUserId } from "@/be/services";
+import { apiErrorResponse, rejectCrossOrigin, validationErrorResponse } from "@/be/security/request-security";
+import { UserPatchSchema, UserSettingsSchema } from "@/shared/validation";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const user = await getAuthUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return apiErrorResponse(req, { error: "Unauthorized" }, 401);
     }
 
     const stats = await getDonationStats(user.id);
+    const overlaySettings = await getOverlaySettingsByUserId(user.id);
 
     return NextResponse.json({
-      user,
+      user: {
+        id: user.id,
+        username: user.username,
+        display_name: user.display_name,
+        bio: user.bio,
+        avatar_url: user.avatar_url,
+        min_amount: user.min_amount,
+        max_amount: user.max_amount,
+        total_received: user.total_received,
+        ...overlaySettings,
+      },
+      overlaySettings,
       stats,
     });
   } catch (error: unknown) {
     console.error("Get profile error:", error);
-    return NextResponse.json({ error: "Gagal mengambil data" }, { status: 500 });
+    return apiErrorResponse(req, { error: "Gagal mengambil data" }, 500);
   }
 }
 
 export async function PUT(req: NextRequest) {
   try {
+    const originError = rejectCrossOrigin(req);
+    if (originError) return originError;
+
     const user = await getAuthUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return apiErrorResponse(req, { error: "Unauthorized" }, 401);
     }
 
-    const body = await req.json();
-    const { display_name, bio, min_amount, max_amount, alert_sound, alert_duration, avatar_url, overlay_style } = body;
+    const parsed = UserSettingsSchema.safeParse(await req.json());
+    if (!parsed.success) return validationErrorResponse(req);
+
+    const { display_name, bio, min_amount, max_amount, avatar_url } = parsed.data;
 
     await updateUserSettings(user.id, {
       display_name,
       bio,
       min_amount,
       max_amount,
-      alert_sound,
-      alert_duration,
       avatar_url,
-      overlay_style,
     });
 
     const updated = await getUserById(user.id);
-    try {
-      const { emitOverlaySettingsUpdated } = await import("@/lib/realtime/socket-server");
-      emitOverlaySettingsUpdated(user.id);
-    } catch (e) {
-      console.warn("Failed to emit overlay settings update event", e);
-    }
-    return NextResponse.json({ user: updated, message: "Pengaturan berhasil disimpan" });
+    return NextResponse.json({
+      user: updated
+        ? {
+            id: updated.id,
+            username: updated.username,
+            display_name: updated.display_name,
+            bio: updated.bio,
+            avatar_url: updated.avatar_url,
+            min_amount: updated.min_amount,
+            max_amount: updated.max_amount,
+            total_received: updated.total_received,
+          }
+        : null,
+      message: "Pengaturan berhasil disimpan",
+    });
   } catch (error: unknown) {
     console.error("Update profile error:", error);
-    return NextResponse.json({ error: "Gagal menyimpan pengaturan" }, { status: 500 });
+    return apiErrorResponse(req, { error: "Gagal menyimpan pengaturan" }, 500);
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
+    const originError = rejectCrossOrigin(req);
+    if (originError) return originError;
+
     const user = await getAuthUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return apiErrorResponse(req, { error: "Unauthorized" }, 401);
     }
 
-    const { action } = await req.json();
+    const parsed = UserPatchSchema.safeParse(await req.json());
+    if (!parsed.success) return validationErrorResponse(req);
+
+    const { action } = parsed.data;
 
     if (action === "regenerate_keys") {
-      const keys = await regenerateKeys(user.id);
-      return NextResponse.json({ ...keys, message: "Keys berhasil di-generate ulang" });
+      await regenerateKeys(user.id);
+      return NextResponse.json({ message: "Keys berhasil di-generate ulang" });
     }
 
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    return apiErrorResponse(req, { error: "Invalid action" }, 400);
   } catch (error: unknown) {
     console.error("Patch profile error:", error);
-    return NextResponse.json({ error: "Gagal memproses" }, { status: 500 });
+    return apiErrorResponse(req, { error: "Gagal memproses" }, 500);
   }
 }

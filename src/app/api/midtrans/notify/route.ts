@@ -1,12 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySignatureKey } from "@/lib/midtrans";
-import { getDonationByOrderId, updateDonationStatus } from "@/lib/services";
-import { publishMessage, QUEUES } from "@/lib/rabbitmq";
-import { emitOverlayNotification, emitPaymentStatus } from "@/lib/realtime/socket-server";
+import { verifySignatureKey } from "@/be/midtrans";
+import { getDonationByOrderId, updateDonationStatus } from "@/be/services";
+import { publishMessage, QUEUES } from "@/be/rabbitmq";
+import { emitOverlayNotification, emitPaymentStatus } from "@/be/realtime/socket-server";
+import { methodNotAllowedResponse, validationErrorResponse } from "@/be/security/request-security";
+import { z } from "zod";
+
+const MidtransNotificationSchema = z.object({
+  order_id: z.string().min(1).max(100),
+  status_code: z.string().min(1).max(10),
+  gross_amount: z.string().min(1).max(32),
+  signature_key: z.string().min(64).max(256),
+  transaction_status: z.string().min(1).max(50),
+  fraud_status: z.string().max(50).optional(),
+  transaction_id: z.string().max(100).optional(),
+});
+
+export function GET(req: NextRequest) {
+  return methodNotAllowedResponse(["POST"], req);
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const parsed = MidtransNotificationSchema.safeParse(await req.json());
+    if (!parsed.success) return validationErrorResponse(req);
+
     const {
       order_id,
       status_code,
@@ -15,7 +33,7 @@ export async function POST(req: NextRequest) {
       transaction_status,
       fraud_status,
       transaction_id,
-    } = body;
+    } = parsed.data;
 
     console.log(`📬 Midtrans notification: order=${order_id}, status=${transaction_status}`);
 
@@ -75,7 +93,7 @@ export async function POST(req: NextRequest) {
         console.warn("RabbitMQ publish failed (non-critical):", mqError);
       }
 
-      emitOverlayNotification({
+      await emitOverlayNotification({
         donationId: donation.id,
         orderId: order_id,
         userId: donation.user_id,

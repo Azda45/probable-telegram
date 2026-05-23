@@ -1,40 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUser, generateToken } from "@/lib/services";
+import { createSession, createUser } from "@/be/services";
+import { setSessionCookie } from "@/be/session-cookie";
+import { checkRateLimit } from "@/be/rate-limit";
+import { apiErrorResponse, getClientIp, rejectCrossOrigin } from "@/be/security/request-security";
+import { RegisterSchema } from "@/shared/validation";
+
+export function GET(req: NextRequest) {
+  return NextResponse.redirect(new URL("/405", req.url));
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, email, password, displayName } = await req.json();
+    const originError = rejectCrossOrigin(req);
+    if (originError) return originError;
 
-    if (!username || !email || !password || !displayName) {
-      return NextResponse.json(
-        { error: "Semua field wajib diisi" },
-        { status: 400 }
-      );
+    const clientIp = getClientIp(req);
+    if (!(await checkRateLimit(`register:${clientIp}`, 3, 60 * 60 * 1000))) {
+      return NextResponse.json({ error: "Terlalu banyak percobaan registrasi" }, { status: 429 });
     }
 
-    if (username.length < 3 || username.length > 30) {
-      return NextResponse.json(
-        { error: "Username harus 3-30 karakter" },
-        { status: 400 }
-      );
+    const parsed = RegisterSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0];
+      const field = firstIssue?.path.join(".") || "input";
+      return apiErrorResponse(req, { error: `Input tidak valid: ${field}`, details: parsed.error.flatten().fieldErrors }, 400);
     }
 
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return NextResponse.json(
-        { error: "Username hanya boleh huruf, angka, dan underscore" },
-        { status: 400 }
-      );
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password minimal 6 karakter" },
-        { status: 400 }
-      );
-    }
+    const { username, email, password, displayName } = parsed.data;
 
     const user = await createUser(username, email, password, displayName);
-    const token = generateToken(user);
+    const session = await createSession(user.id);
 
     const response = NextResponse.json({
       message: "Registrasi berhasil",
@@ -45,13 +40,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    response.cookies.set("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60,
-      path: "/",
-    });
+    setSessionCookie(response, session.token);
 
     return response;
   } catch (error: unknown) {
@@ -63,9 +52,6 @@ export async function POST(req: NextRequest) {
       );
     }
     console.error("Register error:", err);
-    return NextResponse.json(
-      { error: "Gagal registrasi" },
-      { status: 500 }
-    );
+    return apiErrorResponse(req, { error: "Gagal registrasi" }, 500);
   }
 }

@@ -1,17 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTransactionStatus } from "@/lib/midtrans";
-import { getDonationByOrderId } from "@/lib/services";
+import { getTransactionStatus } from "@/be/midtrans";
+import { getDonationByOrderIdForStatus } from "@/be/services";
+import { apiErrorResponse, validationErrorResponse } from "@/be/security/request-security";
+import { OrderIdSchema, StatusTokenSchema } from "@/shared/validation";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const { orderId } = await params;
+    const { orderId: rawOrderId } = await params;
+    const parsedOrderId = OrderIdSchema.safeParse(rawOrderId);
+    if (!parsedOrderId.success) return validationErrorResponse(req);
 
-    const donation = await getDonationByOrderId(orderId);
+    const orderId = parsedOrderId.data;
+    const token = new URL(req.url).searchParams.get("token");
+    const parsedToken = StatusTokenSchema.safeParse(token);
+    if (!parsedToken.success) return validationErrorResponse(req);
+
+    const donation = await getDonationByOrderIdForStatus(orderId, parsedToken.data);
     if (!donation) {
-      return NextResponse.json({ error: "Donasi tidak ditemukan" }, { status: 404 });
+      return apiErrorResponse(req, { error: "Donasi tidak ditemukan" }, 404);
     }
 
     // If already settled, return from DB
@@ -43,6 +52,6 @@ export async function GET(
     }
   } catch (error: unknown) {
     console.error("Check status error:", error);
-    return NextResponse.json({ error: "Gagal mengecek status" }, { status: 500 });
+    return apiErrorResponse(req, { error: "Gagal mengecek status" }, 500);
   }
 }

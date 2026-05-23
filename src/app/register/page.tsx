@@ -22,10 +22,17 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      const payload = {
+        username: form.username.trim().toLowerCase(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        displayName: form.displayName.trim(),
+      };
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -59,6 +66,7 @@ export default function RegisterPage() {
             value={form.displayName}
             onChange={(e) => setForm({ ...form, displayName: e.target.value })}
             required
+            maxLength={100}
           />
         </div>
 
@@ -101,11 +109,11 @@ export default function RegisterPage() {
           <input
             className="input"
             type="password"
-            placeholder="Minimal 6 karakter"
+            placeholder="Minimal 12 karakter"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
-            minLength={6}
+            minLength={12}
           />
         </div>
 

@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateUser, generateToken } from "@/lib/services";
+import { authenticateUser, createSession } from "@/be/services";
+import { setSessionCookie } from "@/be/session-cookie";
+import { checkRateLimit } from "@/be/rate-limit";
+import { getClientIp, rejectCrossOrigin, validationErrorResponse } from "@/be/security/request-security";
+import { LoginSchema } from "@/shared/validation";
+
+export function GET(req: NextRequest) {
+  return NextResponse.redirect(new URL("/405", req.url));
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { login, password } = await req.json();
+    const originError = rejectCrossOrigin(req);
+    if (originError) return originError;
 
-    if (!login || !password) {
-      return NextResponse.json(
-        { error: "Username/email dan password wajib diisi" },
-        { status: 400 }
-      );
+    const clientIp = getClientIp(req);
+    if (!(await checkRateLimit(`login:${clientIp}`, 5, 15 * 60 * 1000))) {
+      return NextResponse.json({ error: "Terlalu banyak percobaan login" }, { status: 429 });
     }
+
+    const parsed = LoginSchema.safeParse(await req.json());
+    if (!parsed.success) return validationErrorResponse(req);
+
+    const { login, password } = parsed.data;
 
     const user = await authenticateUser(login, password);
     if (!user) {
@@ -20,7 +32,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const token = generateToken(user);
+    const session = await createSession(user.id);
 
     const response = NextResponse.json({
       message: "Login berhasil",
@@ -31,13 +43,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    response.cookies.set("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60,
-      path: "/",
-    });
+    setSessionCookie(response, session.token);
 
     return response;
   } catch (error: unknown) {

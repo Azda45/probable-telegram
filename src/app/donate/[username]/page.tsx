@@ -1,19 +1,19 @@
-import { getUserByUsername } from "@/lib/services";
+import { getUserByUsername } from "@/be/services";
 import DonateClient from "./DonateClient";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-export async function generateMetadata({ params }: { params: Promise<{ username: string }> | { username: string } }): Promise<Metadata> {
-  const resolvedParams = await Promise.resolve(params);
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
   const user = await getUserByUsername(resolvedParams.username);
   if (!user) return { title: "Not Found" };
   return { title: `Donate to ${user.display_name} | DonasiKu` };
 }
 
-export default async function DonatePage({ params }: { params: Promise<{ username: string }> | { username: string } }) {
-  const resolvedParams = await Promise.resolve(params);
+export default async function DonatePage({ params }: { params: Promise<{ username: string }> }) {
+  const resolvedParams = await params;
   const user = await getUserByUsername(resolvedParams.username);
   
   if (!user) {

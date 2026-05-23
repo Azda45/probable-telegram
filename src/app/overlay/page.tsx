@@ -2,28 +2,69 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { formatRupiah } from "@/lib/utils";
-import { useOverlay } from "@/hooks/useOverlay";
+import { useOverlay, type OverlayTimerState } from "@/fe/overlay/hooks/useOverlay";
+import { getOverlayAnimationCss } from "@/shared/overlay-animation";
+import { getOverlayAppearance } from "@/shared/overlay-appearance";
+import OverlayAlertCard from "@/fe/overlay/components/OverlayAlertCard";
+
+const TIMER_PHASE_ACCENT: Record<OverlayTimerState["phase"], string> = {
+  enter: "#38bdf8",
+  alert: "#818cf8",
+  exit: "#fb923c",
+};
+
+function formatTimerSeconds(ms: number): string {
+  return `${(Math.max(0, ms) / 1000).toFixed(1)}s`;
+}
+
+function formatQueuedCount(count: number): string {
+  return count > 99 ? "99+" : String(count);
+}
+
+function PausedBadge({ queuedCount, floating = false }: { queuedCount: number; floating?: boolean }) {
+  const positionClass = floating
+    ? "pointer-events-none absolute left-0 top-full mt-3"
+    : "fixed left-[5%] top-1/2 -translate-y-1/2";
+
+  return (
+    <div className={`${positionClass} inline-flex items-center justify-center whitespace-nowrap rounded-full border border-white/35 bg-rose-600/95 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-white shadow-[0_0_24px_rgba(244,63,94,0.75)] backdrop-blur-sm`}>
+      Paused · {formatQueuedCount(queuedCount)} pesan menumpuk
+    </div>
+  );
+}
+
+function OverlayTimer({ timer, progressColor }: { timer: OverlayTimerState; progressColor: string }) {
+  const progress = Math.min(100, Math.max(0, timer.progress * 100));
+  const accent = timer.phase === "alert" ? progressColor : TIMER_PHASE_ACCENT[timer.phase];
+
+  return (
+    <div className="mt-3 flex w-full items-center gap-3 rounded-full border border-[#334155]/70 bg-[#0f172a]/75 px-3 py-2 shadow-lg backdrop-blur-sm">
+      <div
+        aria-label="Durasi overlay"
+        aria-valuemax={100}
+        aria-valuemin={0}
+        aria-valuenow={Math.round(progress)}
+        className="h-2 flex-1 overflow-hidden rounded-full bg-[#1e293b]"
+        role="progressbar"
+      >
+        <div
+          className="h-full rounded-full transition-[width] duration-100 ease-linear"
+          style={{ width: `${progress}%`, backgroundColor: accent }}
+        />
+      </div>
+      <span className="min-w-[3.25rem] text-right text-xs font-semibold tabular-nums text-[#cbd5e1]">
+        {formatTimerSeconds(timer.totalRemainingMs)}
+      </span>
+    </div>
+  );
+}
 
 function OverlayContent() {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token") ?? null;
-  const { current, isShowing, isResumedAlert, overlayStyle } = useOverlay(token);
+  const { current, isShowing, isResumedAlert, isPaused, queuedCount, overlayStyle, overlayAnimation, overlayColors, overlayTimer } = useOverlay(token);
   const shadowParam = searchParams?.get("shadow") ?? overlayStyle;
-
-  let wrapperClass = "w-full max-w-[95%]";
-  let shadowClass = "";
-
-  if (shadowParam === "right") {
-    wrapperClass += " mr-4 mt-4";
-    shadowClass = "shadow-[8px_-8px_0px_#6366f1]";
-  } else if (shadowParam === "left") {
-    wrapperClass += " ml-4 mt-4";
-    shadowClass = "shadow-[-8px_-8px_0px_#6366f1]";
-  } else {
-    wrapperClass += " mt-2";
-    shadowClass = "shadow-lg";
-  }
+  const { wrapperClass, shadowClass } = getOverlayAppearance(shadowParam);
 
   if (!token) {
     return (
@@ -33,37 +74,37 @@ function OverlayContent() {
     );
   }
 
+  const alertAnimation = isShowing && isResumedAlert
+    ? "none"
+    : getOverlayAnimationCss(overlayAnimation, isShowing ? "enter" : "exit");
+  const alertAnimationWithState = alertAnimation === "none"
+    ? "none"
+    : `${alertAnimation} ${isPaused ? "paused" : "running"}`;
+
   return (
     <div className="w-screen h-screen flex items-center justify-center px-[5%] py-2 bg-transparent overflow-hidden box-border">
-      {current && (
+      {current ? (
         <div
-          className={wrapperClass}
+          className={`${wrapperClass} overlay-alert-shell relative`}
           style={{
-            animation: isShowing
-              ? isResumedAlert
-                ? "none"
-                : "overlaySlideIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards"
-              : "overlaySlideOut 0.5s ease-in forwards",
+            animation: alertAnimationWithState,
           }}
         >
-          <div className={`w-full bg-[#1e293b] border-2 border-[#334155] rounded-2xl px-8 py-10 md:py-12 flex flex-col items-center justify-center text-center relative min-h-[160px] ${shadowClass}`}>
-            
-            {/* Main Text */}
-            <div className="text-2xl md:text-3xl font-bold tracking-wide text-[#fafafa] mt-2">
-              <span className="text-[#818cf8]">{current.donor_name}</span>{" "}
-              berdonasi{" "}
-              <span className="text-[#818cf8]">{formatRupiah(current.amount)}</span>
-            </div>
-
-            {/* Message */}
-            {current.message && (
-              <div className="mt-4 text-xl md:text-2xl text-[#a1a1aa] font-medium">
-                {current.message}
-              </div>
-            )}
-          </div>
+          <OverlayAlertCard
+            donorName={current.donor_name}
+            amount={current.amount}
+            message={current.message}
+            shadowClass={shadowClass}
+            colors={overlayColors}
+          />
+          {overlayTimer && overlayColors.overlay_progress_enabled && (
+            <OverlayTimer timer={overlayTimer} progressColor={overlayColors.overlay_progress_color} />
+          )}
+          {isPaused && <PausedBadge queuedCount={queuedCount} floating />}
         </div>
-      )}
+      ) : isPaused ? (
+        <PausedBadge queuedCount={queuedCount} />
+      ) : null}
     </div>
   );
 }

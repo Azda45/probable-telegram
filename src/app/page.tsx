@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
 const FEATURES = [
@@ -26,13 +27,13 @@ export default function HomePage() {
   }, []);
 
   const handleLogout = async () => {
-    await fetch("/api/auth", { method: "DELETE" });
+    await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     router.refresh();
   };
 
   return (
-    <div style={{ minHeight: "100vh" }}>
+    <div className="min-h-screen">
       <Navbar user={user} onLogout={handleLogout} />
 
       <main className="container" style={{ paddingTop: "6rem", paddingBottom: "6rem" }}>
@@ -68,23 +69,17 @@ export default function HomePage() {
         </section>
 
         {/* Features Grid */}
-        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.5rem" }} className="animate-fade-in">
-          {FEATURES.map((f, i) => (
-            <div key={i} className="card card-hover" style={{ padding: "2rem" }}>
+        <section id="features" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.5rem" }} className="animate-fade-in scroll-mt-24">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="card card-hover" style={{ padding: "2rem" }}>
               <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>{f.icon}</div>
               <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: "0.5rem" }}>{f.title}</h3>
               <p style={{ color: "var(--color-text-secondary)", fontSize: "0.875rem", lineHeight: 1.5 }}>{f.desc}</p>
             </div>
           ))}
         </section>
-
-        {/* Minimalist Footer */}
-        <footer style={{ marginTop: "8rem", borderTop: "1px solid var(--color-border)", paddingTop: "4rem", textAlign: "center" }}>
-          <div style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
-            © 2024 DonasiKu. Built for streamers by streamers.
-          </div>
-        </footer>
       </main>
+      <Footer />
     </div>
   );
 }

@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserByUsername } from "@/lib/services";
+import { getUserByUsername } from "@/be/services";
+import { apiErrorResponse, validationErrorResponse } from "@/be/security/request-security";
+import { z } from "zod";
+
+const UsernameSchema = z.string().trim().toLowerCase().min(3).max(30).regex(/^[a-z0-9_]+$/);
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const username = searchParams.get("username");
 
-  if (!username) {
-    return NextResponse.json({ error: "Username required" }, { status: 400 });
-  }
+  const parsedUsername = UsernameSchema.safeParse(username);
+  if (!parsedUsername.success) return validationErrorResponse(req);
 
-  const user = await getUserByUsername(username);
+  const user = await getUserByUsername(parsedUsername.data);
   if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    return apiErrorResponse(req, { error: "User not found" }, 404);
   }
 
   return NextResponse.json({

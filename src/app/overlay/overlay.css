@@ -28,3 +28,133 @@ body {
   0%, 100% { transform: rotate(-3deg); }
   50% { transform: rotate(3deg); }
 }
+
+.overlay-alert-shell {
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform, opacity, filter;
+}
+
+@keyframes overlayEnterSlideUp {
+  0% { transform: translateY(40px) scale(0.96); opacity: 0; }
+  70% { transform: translateY(-4px) scale(1.01); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes overlayExitSlideUp {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(30px) scale(0.96); opacity: 0; }
+}
+
+@keyframes overlayEnterSlideDown {
+  0% { transform: translateY(-40px) scale(0.96); opacity: 0; }
+  70% { transform: translateY(4px) scale(1.01); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes overlayExitSlideDown {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-30px) scale(0.96); opacity: 0; }
+}
+
+@keyframes overlayEnterFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes overlayExitFade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes overlayEnterZoom {
+  0% { transform: scale(0.82); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes overlayExitZoom {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.88); opacity: 0; }
+}
+
+@keyframes overlayEnterBounce {
+  0% { transform: translateY(38px) scale(0.88); opacity: 0; }
+  65% { transform: translateY(-10px) scale(1.03); opacity: 1; }
+  82% { transform: translateY(4px) scale(0.99); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes overlayExitBounce {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  35% { transform: translateY(-8px) scale(1.02); opacity: 0.8; }
+  100% { transform: translateY(30px) scale(0.92); opacity: 0; }
+}
+
+@keyframes overlayEnterFlip {
+  0% { transform: perspective(900px) rotateX(72deg) scale(0.94); opacity: 0; }
+  100% { transform: perspective(900px) rotateX(0deg) scale(1); opacity: 1; }
+}
+
+@keyframes overlayExitFlip {
+  0% { transform: perspective(900px) rotateX(0deg) scale(1); opacity: 1; }
+  100% { transform: perspective(900px) rotateX(-58deg) scale(0.94); opacity: 0; }
+}
+
+@keyframes overlayEnterSlideLeft {
+  0% { transform: translateX(-50px) scale(0.96); opacity: 0; }
+  70% { transform: translateX(4px) scale(1.01); opacity: 1; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes overlayExitSlideLeft {
+  0% { transform: translateX(0) scale(1); opacity: 1; }
+  100% { transform: translateX(-40px) scale(0.96); opacity: 0; }
+}
+
+@keyframes overlayEnterSlideRight {
+  0% { transform: translateX(50px) scale(0.96); opacity: 0; }
+  70% { transform: translateX(-4px) scale(1.01); opacity: 1; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes overlayExitSlideRight {
+  0% { transform: translateX(0) scale(1); opacity: 1; }
+  100% { transform: translateX(40px) scale(0.96); opacity: 0; }
+}
+
+@keyframes overlayEnterElastic {
+  0% { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+  40% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+  65% { transform: scale(0.95) rotate(-2deg); }
+  85% { transform: scale(1.03) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes overlayExitElastic {
+  0% { transform: scale(1) rotate(0deg); opacity: 1; }
+  30% { transform: scale(1.08) rotate(2deg); opacity: 0.7; }
+  100% { transform: scale(0.3) rotate(8deg); opacity: 0; }
+}
+
+@keyframes overlayEnterBlurIn {
+  0% { filter: blur(12px); opacity: 0; transform: scale(0.95); }
+  100% { filter: blur(0); opacity: 1; transform: scale(1); }
+}
+
+@keyframes overlayExitBlurIn {
+  0% { filter: blur(0); opacity: 1; transform: scale(1); }
+  100% { filter: blur(8px); opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes overlayEnterSwing {
+  0% { transform: rotate(-15deg) translateY(-20px); opacity: 0; }
+  30% { transform: rotate(8deg) translateY(2px); opacity: 1; }
+  55% { transform: rotate(-5deg) translateY(-1px); }
+  80% { transform: rotate(2deg) translateY(0); }
+  100% { transform: rotate(0deg) translateY(0); opacity: 1; }
+}
+
+@keyframes overlayExitSwing {
+  0% { transform: rotate(0deg) translateY(0); opacity: 1; }
+  100% { transform: rotate(12deg) translateY(-25px); opacity: 0; }
+}
