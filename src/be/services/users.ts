@@ -46,7 +46,7 @@ export async function getUserById(id: string): Promise<User | null> {
 
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT id, username, email, display_name, avatar_url, bio, stream_key, overlay_token,
-            min_amount, max_amount, total_received, created_at
+            min_amount, max_amount, total_received, created_at, bank_name, bank_account, is_admin
      FROM users WHERE id = ?`,
     [id]
   );
@@ -58,7 +58,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
 
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT id, username, email, display_name, avatar_url, bio, stream_key, overlay_token,
-            min_amount, max_amount, total_received, created_at
+            min_amount, max_amount, total_received, created_at, bank_name, bank_account, is_admin
      FROM users WHERE username = ?`,
     [username]
   );
@@ -82,11 +82,13 @@ const USER_SETTING_ASSIGNMENTS = {
   min_amount: "min_amount = ?",
   max_amount: "max_amount = ?",
   avatar_url: "avatar_url = ?",
+  bank_name: "bank_name = ?",
+  bank_account: "bank_account = ?",
 } as const;
 
 export async function updateUserSettings(
   userId: string,
-  settings: Partial<Pick<User, "display_name" | "bio" | "min_amount" | "max_amount" | "avatar_url">>
+  settings: Partial<Pick<User, "display_name" | "bio" | "min_amount" | "max_amount" | "avatar_url" | "bank_name" | "bank_account">>
 ): Promise<void> {
   await ensureUserCoreColumns();
 

@@ -11,6 +11,7 @@ interface OverlayAlertCardProps {
     overlay_text_color: string;
     overlay_message_color: string;
     overlay_accent_color: string;
+    action_text?: string;
   };
 }
 
@@ -31,7 +32,7 @@ export default function OverlayAlertCard({
     >
       <div className="text-2xl md:text-3xl font-bold tracking-wide mt-2" style={{ color: colors?.overlay_text_color ?? "#fafafa" }}>
         <span style={{ color: colors?.overlay_accent_color ?? "#818cf8" }}>{donorName}</span>{" "}
-        berdonasi{" "}
+        {colors?.action_text ?? "berdonasi"}{" "}
         <span style={{ color: colors?.overlay_accent_color ?? "#818cf8" }}>{formatRupiah(amount)}</span>
       </div>
 

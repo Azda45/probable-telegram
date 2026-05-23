@@ -1,4 +1,5 @@
 export interface UserInfo {
+  id: string;
   username: string;
   display_name: string;
   bio: string | null;

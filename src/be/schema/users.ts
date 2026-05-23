@@ -14,7 +14,11 @@ async function ensureUsersColumn(
 async function ensureUserCoreColumnsWithConnection(conn: PoolConnection): Promise<void> {
   await ensureUsersColumn(conn, "max_amount");
   await ensureUsersColumn(conn, "is_active");
+  await ensureUsersColumn(conn, "is_admin");
   await ensureUsersColumn(conn, "banned_at");
+  await ensureUsersColumn(conn, "bank_name");
+  await ensureUsersColumn(conn, "bank_account");
+  await ensureUsersColumn(conn, "withdrawn_amount");
 }
 
 export function ensureUserCoreColumns(conn?: PoolConnection): Promise<void> {
@@ -50,7 +54,11 @@ export async function createUsersTable(conn: PoolConnection): Promise<void> {
       min_amount INT DEFAULT 1000,
       max_amount INT DEFAULT 10000000,
       is_active TINYINT(1) DEFAULT 1,
+      is_admin TINYINT(1) DEFAULT 0,
       banned_at TIMESTAMP NULL DEFAULT NULL,
+      bank_name VARCHAR(50) DEFAULT NULL,
+      bank_account VARCHAR(50) DEFAULT NULL,
+      withdrawn_amount BIGINT DEFAULT 0,
       total_received BIGINT DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

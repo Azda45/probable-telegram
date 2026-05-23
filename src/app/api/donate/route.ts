@@ -26,13 +26,27 @@ export async function POST(req: NextRequest) {
     const parsed = DonationCreateSchema.safeParse(await req.json());
     if (!parsed.success) return validationErrorResponse(req);
 
-    const {
+    let {
       username,
       donorName: donorNameClean,
       donorEmail: donorEmailClean,
       amount,
       message: messageClean,
     } = parsed.data;
+
+    // Check blacklist words
+    const { getBlacklistWords } = await import("@/be/services/moderation");
+    try {
+      const blacklisted = await getBlacklistWords();
+      for (const b of blacklisted) {
+        if (b.word && messageClean) {
+          const regex = new RegExp(b.word, 'gi');
+          messageClean = messageClean.replace(regex, '***');
+        }
+      }
+    } catch (e) {
+      // Ignore if table doesn't exist yet
+    }
 
     // ── Cari streamer ──
     const user = await getUserByUsername(username);

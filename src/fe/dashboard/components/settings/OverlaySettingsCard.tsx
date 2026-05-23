@@ -50,6 +50,12 @@ export default function OverlaySettingsCard({ overlayForm, overlayPreviewNonce, 
             <option value="none">Datar / Tanpa Shadow Biasa</option>
           </select>
         </SettingsField>
+        <SettingsField label="Teks Aksi (Contoh: berdonasi)">
+          <div className="flex flex-col gap-1">
+            <input className="input" type="text" maxLength={50} value={overlayForm.action_text} onChange={(e) => setOverlayForm({ ...overlayForm, action_text: e.target.value })} placeholder="berdonasi" />
+            <p className="text-xs text-[var(--color-message)]">Teks yang muncul di antara nama dan nominal.</p>
+          </div>
+        </SettingsField>
         <OverlayAnimationControls overlayForm={overlayForm} setOverlayForm={setOverlayForm} />
         <OverlayColorFields overlayForm={overlayForm} setOverlayForm={setOverlayForm} />
         <OverlayProgressToggle overlayForm={overlayForm} setOverlayForm={setOverlayForm} />

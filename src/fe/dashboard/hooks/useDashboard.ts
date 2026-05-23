@@ -69,6 +69,7 @@ export default function useDashboard() {
 
   const actions = useDashboardActions({
     loadProfile,
+    loadDonations,
     overlayForm,
     overlayToken,
     setIsOverlayPaused,
@@ -85,6 +86,7 @@ export default function useDashboard() {
     donationPage,
     donationTotal,
     donations,
+    deleteDonation: actions.deleteDonation,
     isOverlayPaused,
     loading,
     loadDonations,

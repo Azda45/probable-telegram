@@ -32,10 +32,10 @@ export const UserSettingsSchema = z
       .trim()
       .max(500)
       .url()
-      .or(z.literal(""))
-      .nullable()
       .optional()
       .transform((value) => (value === "" ? null : value)),
+    bank_name: trimmedString(50).optional(),
+    bank_account: trimmedString(50).optional(),
   })
   .refine(
     (value) =>
@@ -102,6 +102,7 @@ export const OverlaySettingsSchema = z.object({
   overlay_accent_color: hexColor.optional(),
   overlay_progress_color: hexColor.optional(),
   overlay_progress_enabled: z.boolean().optional(),
+  action_text: z.string().trim().max(50).optional(),
 });
 
 export const UserPatchSchema = z.object({

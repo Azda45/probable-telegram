@@ -10,6 +10,8 @@ export interface DashboardSettingsForm {
   min_amount: number;
   avatar_url: string;
   max_amount: number;
+  bank_name: string;
+  bank_account: string;
 }
 
 export interface DashboardOverlayForm extends OverlayAnimationSettings {
@@ -23,6 +25,7 @@ export interface DashboardOverlayForm extends OverlayAnimationSettings {
   overlay_accent_color: string;
   overlay_progress_color: string;
   overlay_progress_enabled: boolean;
+  action_text: string;
 }
 
 export type DashboardOverlaySettingsSource = Partial<Omit<DashboardOverlayForm, "overlay_progress_enabled">> & {

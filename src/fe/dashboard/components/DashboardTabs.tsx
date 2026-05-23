@@ -1,6 +1,6 @@
-import { CircleDollarSign, LayoutDashboard, Settings } from "lucide-react";
+import { CircleDollarSign, LayoutDashboard, Settings, Landmark } from "lucide-react";
 
-export type DashboardTab = "overview" | "donations" | "settings";
+export type DashboardTab = "overview" | "donations" | "payouts" | "settings";
 
 interface DashboardTabsProps {
   activeTab: DashboardTab;
@@ -10,6 +10,7 @@ interface DashboardTabsProps {
 const TABS = [
   { id: "overview" as const, label: "Overview", icon: <LayoutDashboard className="w-4 h-4" /> },
   { id: "donations" as const, label: "Donasi", icon: <CircleDollarSign className="w-4 h-4" /> },
+  { id: "payouts" as const, label: "Payout", icon: <Landmark className="w-4 h-4" /> },
   { id: "settings" as const, label: "Pengaturan", icon: <Settings className="w-4 h-4" /> },
 ];
 

@@ -18,6 +18,7 @@ export default function useOverlaySettingsState() {
     overlay_accent_color: "#818cf8",
     overlay_progress_color: "#818cf8",
     overlay_progress_enabled: true,
+    action_text: "berdonasi",
   });
 
   const applyOverlaySettings = useCallback((settings: IncomingOverlaySettings | null | undefined) => {
@@ -35,6 +36,7 @@ export default function useOverlaySettingsState() {
       overlay_accent_color: typeof settings.overlay_accent_color === "string" ? settings.overlay_accent_color : "#818cf8",
       overlay_progress_color: typeof settings.overlay_progress_color === "string" ? settings.overlay_progress_color : "#818cf8",
       overlay_progress_enabled: settings.overlay_progress_enabled === undefined ? true : Boolean(settings.overlay_progress_enabled),
+      action_text: typeof settings.action_text === "string" ? settings.action_text : "berdonasi",
     };
 
     settingsRef.current = {

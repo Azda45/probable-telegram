@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { formatRupiah } from "@/shared/utils";
 import {
+  deleteDashboardDonation,
   logoutDashboardUser,
   regenerateDashboardKeys,
   replayOverlayDonation,
@@ -16,6 +17,7 @@ import type { DashboardOverlayForm, DashboardSettingsForm } from "../types";
 
 interface DashboardActionArgs {
   loadProfile: () => Promise<void>;
+  loadDonations: (page?: number, filter?: any) => Promise<void>;
   overlayForm: DashboardOverlayForm;
   overlayToken: string;
   setIsOverlayPaused: (paused: boolean) => void;
@@ -28,6 +30,7 @@ interface DashboardActionArgs {
 
 export default function useDashboardActions({
   loadProfile,
+  loadDonations,
   overlayForm,
   overlayToken,
   setIsOverlayPaused,
@@ -99,6 +102,17 @@ export default function useDashboardActions({
     }
   };
 
+  const deleteDonation = async (donationId: string) => {
+    if (!confirm("Hapus pesan donasi ini? (Pesan yang berisi kata tidak pantas dapat di-censor, atau dihapus sepenuhnya)")) return;
+    try {
+      await deleteDashboardDonation(donationId);
+      toast.success("Pesan donasi berhasil dihapus");
+      loadDonations();
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
   const skipOverlay = async () => {
     try {
       const data = await skipOverlayNotification();
@@ -109,6 +123,7 @@ export default function useDashboardActions({
   };
 
   return {
+    deleteDonation,
     logoutDashboardUser,
     pauseOverlay,
     regenerateKeys,

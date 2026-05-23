@@ -15,6 +15,7 @@ export interface OverlayRuntimeSettings {
   overlay_accent_color: string;
   overlay_progress_color: string;
   overlay_progress_enabled: boolean;
+  action_text: string;
 }
 
 export interface IncomingOverlaySettings {
@@ -31,6 +32,7 @@ export interface IncomingOverlaySettings {
   overlay_accent_color?: unknown;
   overlay_progress_color?: unknown;
   overlay_progress_enabled?: unknown;
+  action_text?: unknown;
 }
 
 export interface AlertLifecycleState {

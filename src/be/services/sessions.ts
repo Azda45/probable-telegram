@@ -45,7 +45,7 @@ export async function getUserBySessionToken(token: string | undefined): Promise<
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT u.id, u.username, u.email, u.display_name, u.avatar_url, u.bio,
             u.stream_key, u.overlay_token, u.min_amount, u.max_amount,
-            u.total_received, u.created_at
+            u.total_received, u.created_at, u.is_admin
      FROM sessions s
      JOIN users u ON u.id = s.user_id
      WHERE s.session_token_hash = ?

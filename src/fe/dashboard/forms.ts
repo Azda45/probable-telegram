@@ -28,6 +28,7 @@ export const initialDashboardOverlayForm: DashboardOverlayForm = {
   overlay_accent_color: "#818cf8",
   overlay_progress_color: "#818cf8",
   overlay_progress_enabled: true,
+  action_text: "berdonasi",
   ...DEFAULT_OVERLAY_ANIMATION_SETTINGS,
 };
 
@@ -38,6 +39,8 @@ export function mapUserToSettingsForm(user: User): DashboardSettingsForm {
     min_amount: user.min_amount || 1000,
     avatar_url: user.avatar_url || "",
     max_amount: user.max_amount || 10000000,
+    bank_name: user.bank_name || "",
+    bank_account: user.bank_account || "",
   };
 }
 
@@ -57,6 +60,7 @@ export function mapOverlaySettingsToForm(source: DashboardOverlaySettingsSource)
     overlay_progress_enabled: source.overlay_progress_enabled === undefined
       ? true
       : Boolean(source.overlay_progress_enabled),
+    action_text: source.action_text || "berdonasi",
     ...animationSettings,
   };
 }

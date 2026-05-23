@@ -13,6 +13,9 @@ export interface User {
   max_amount: number;
   total_received: number;
   created_at: Date;
+  is_admin: number;
+  bank_name: string | null;
+  bank_account: string | null;
 }
 
 export interface AuthSession {
@@ -39,6 +42,7 @@ export interface OverlaySettings extends OverlayAnimationSettings {
   overlay_accent_color: string;
   overlay_progress_color: string;
   overlay_progress_enabled: boolean;
+  action_text: string;
 }
 
 export interface Donation {

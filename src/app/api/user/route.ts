@@ -24,6 +24,8 @@ export async function GET(req: NextRequest) {
         min_amount: user.min_amount,
         max_amount: user.max_amount,
         total_received: user.total_received,
+        bank_name: user.bank_name,
+        bank_account: user.bank_account,
         ...overlaySettings,
       },
       overlaySettings,
@@ -48,7 +50,7 @@ export async function PUT(req: NextRequest) {
     const parsed = UserSettingsSchema.safeParse(await req.json());
     if (!parsed.success) return validationErrorResponse(req);
 
-    const { display_name, bio, min_amount, max_amount, avatar_url } = parsed.data;
+    const { display_name, bio, min_amount, max_amount, avatar_url, bank_name, bank_account } = parsed.data;
 
     await updateUserSettings(user.id, {
       display_name,
@@ -56,6 +58,8 @@ export async function PUT(req: NextRequest) {
       min_amount,
       max_amount,
       avatar_url,
+      bank_name,
+      bank_account,
     });
 
     const updated = await getUserById(user.id);
@@ -70,6 +74,8 @@ export async function PUT(req: NextRequest) {
             min_amount: updated.min_amount,
             max_amount: updated.max_amount,
             total_received: updated.total_received,
+            bank_name: updated.bank_name,
+            bank_account: updated.bank_account,
           }
         : null,
       message: "Pengaturan berhasil disimpan",

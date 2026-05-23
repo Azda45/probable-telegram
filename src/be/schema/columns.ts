@@ -4,7 +4,11 @@ import type { PoolConnection } from "mysql2/promise";
 export const USER_COLUMN_DEFINITIONS = {
   max_amount: "INT DEFAULT 10000000",
   is_active: "TINYINT(1) DEFAULT 1",
+  is_admin: "TINYINT(1) DEFAULT 0",
   banned_at: "TIMESTAMP NULL DEFAULT NULL",
+  bank_name: "VARCHAR(50) DEFAULT NULL",
+  bank_account: "VARCHAR(50) DEFAULT NULL",
+  withdrawn_amount: "BIGINT DEFAULT 0",
 } as const;
 
 export const DONATION_COLUMN_DEFINITIONS = {
@@ -19,6 +23,7 @@ export const OVERLAY_SETTINGS_COLUMN_DEFINITIONS = {
   overlay_accent_color: "VARCHAR(7) DEFAULT '#818cf8'",
   overlay_progress_color: "VARCHAR(7) DEFAULT '#818cf8'",
   overlay_progress_enabled: "TINYINT(1) DEFAULT 1",
+  action_text: "VARCHAR(50) DEFAULT 'berdonasi'",
 } as const;
 
 export async function ensureTableColumn(

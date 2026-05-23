@@ -83,6 +83,10 @@ export async function skipOverlayNotification() {
   return ensureOk<{ emitted: boolean; error?: string }>(await fetch("/api/overlay/skip", { method: "POST" }));
 }
 
+export async function deleteDashboardDonation(donationId: string) {
+  return ensureOk<{ success: boolean; error?: string }>(await fetch(`/api/user/donations/${donationId}`, { method: "DELETE" }));
+}
+
 export async function toggleOverlayPause(overlayToken: string) {
   return ensureOk<{ paused: boolean; error?: string }>(await fetch(`/api/overlay/pause?token=${encodeURIComponent(overlayToken)}`));
 }

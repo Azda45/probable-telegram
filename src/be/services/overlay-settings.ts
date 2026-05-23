@@ -18,6 +18,7 @@ const DEFAULT_OVERLAY_SETTINGS: Omit<OverlaySettings, "user_id"> = {
   overlay_accent_color: "#818cf8",
   overlay_progress_color: "#818cf8",
   overlay_progress_enabled: true,
+  action_text: "berdonasi",
   ...DEFAULT_OVERLAY_ANIMATION_SETTINGS,
 };
 
@@ -39,6 +40,11 @@ function sanitizeHexColor(value: unknown, fallback: string): string {
   return typeof value === "string" && /^#[0-9A-Fa-f]{6}$/.test(value) ? value : fallback;
 }
 
+function sanitizeActionText(value: unknown): string {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text ? text.substring(0, 50) : "berdonasi";
+}
+
 function normalizeOverlaySettings(userId: string, source: Record<string, unknown>): OverlaySettings {
   return {
     user_id: userId,
@@ -54,6 +60,7 @@ function normalizeOverlaySettings(userId: string, source: Record<string, unknown
     overlay_progress_enabled: source.overlay_progress_enabled === undefined
       ? DEFAULT_OVERLAY_SETTINGS.overlay_progress_enabled
       : Boolean(Number(source.overlay_progress_enabled)),
+    action_text: sanitizeActionText(source.action_text),
     ...sanitizeOverlayAnimationSettings(source),
   };
 }
@@ -66,8 +73,8 @@ export async function createDefaultOverlaySettings(userId: string): Promise<void
        overlay_animation, overlay_animation_duration, overlay_animation_enabled,
        overlay_bg_color, overlay_border_color, overlay_text_color,
        overlay_message_color, overlay_accent_color, overlay_progress_color,
-       overlay_progress_enabled
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       overlay_progress_enabled, action_text
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       userId,
       DEFAULT_OVERLAY_SETTINGS.alert_sound,
@@ -83,6 +90,7 @@ export async function createDefaultOverlaySettings(userId: string): Promise<void
       DEFAULT_OVERLAY_SETTINGS.overlay_accent_color,
       DEFAULT_OVERLAY_SETTINGS.overlay_progress_color,
       DEFAULT_OVERLAY_SETTINGS.overlay_progress_enabled ? 1 : 0,
+      DEFAULT_OVERLAY_SETTINGS.action_text,
     ]
   );
 }
@@ -95,7 +103,7 @@ export async function getOverlaySettingsByUserId(userId: string): Promise<Overla
             overlay_animation, overlay_animation_duration, overlay_animation_enabled,
             overlay_bg_color, overlay_border_color, overlay_text_color,
             overlay_message_color, overlay_accent_color, overlay_progress_color,
-            overlay_progress_enabled
+            overlay_progress_enabled, action_text
      FROM overlay_settings
      WHERE user_id = ?`,
     [userId]
@@ -136,8 +144,8 @@ export async function updateOverlaySettings(
        overlay_animation, overlay_animation_duration, overlay_animation_enabled,
        overlay_bg_color, overlay_border_color, overlay_text_color,
        overlay_message_color, overlay_accent_color, overlay_progress_color,
-       overlay_progress_enabled
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       overlay_progress_enabled, action_text
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
        alert_sound = VALUES(alert_sound),
        alert_duration = VALUES(alert_duration),
@@ -151,7 +159,8 @@ export async function updateOverlaySettings(
        overlay_message_color = VALUES(overlay_message_color),
        overlay_accent_color = VALUES(overlay_accent_color),
        overlay_progress_color = VALUES(overlay_progress_color),
-       overlay_progress_enabled = VALUES(overlay_progress_enabled)`,
+       overlay_progress_enabled = VALUES(overlay_progress_enabled),
+       action_text = VALUES(action_text)`,
     [
       userId,
       normalized.alert_sound,
@@ -167,6 +176,7 @@ export async function updateOverlaySettings(
       normalized.overlay_accent_color,
       normalized.overlay_progress_color,
       normalized.overlay_progress_enabled ? 1 : 0,
+      normalized.action_text,
     ]
   );
 

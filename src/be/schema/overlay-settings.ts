@@ -27,6 +27,7 @@ async function ensureOverlaySettingsTableWithConnection(conn: PoolConnection): P
       overlay_accent_color VARCHAR(7) DEFAULT '#818cf8',
       overlay_progress_color VARCHAR(7) DEFAULT '#818cf8',
       overlay_progress_enabled TINYINT(1) DEFAULT 1,
+      action_text VARCHAR(50) DEFAULT 'berdonasi',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

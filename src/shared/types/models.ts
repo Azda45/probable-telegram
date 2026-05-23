@@ -7,6 +7,7 @@ export interface User {
   total_received: number;
   bio: string | null;
   avatar_url: string | null;
+  is_admin: boolean | number;
 }
 
 export interface OverlaySettings {
@@ -24,6 +25,7 @@ export interface OverlaySettings {
   overlay_accent_color: string;
   overlay_progress_color: string;
   overlay_progress_enabled: boolean | number;
+  action_text: string;
 }
 
 export interface DonationRecord {

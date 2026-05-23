@@ -47,6 +47,7 @@ export async function PUT(req: NextRequest) {
       overlay_accent_color: body.overlay_accent_color,
       overlay_progress_color: body.overlay_progress_color,
       overlay_progress_enabled: body.overlay_progress_enabled,
+      action_text: body.action_text,
     });
 
     try {

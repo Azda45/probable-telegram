@@ -30,6 +30,7 @@ export default async function DonatePage({ params }: { params: Promise<{ usernam
 
   // Pass plain, serializable data to the client component
   const userInfo = {
+    id: user.id,
     username: user.username,
     display_name: user.display_name,
     bio: user.bio,

@@ -21,7 +21,11 @@ CREATE TABLE IF NOT EXISTS users (
   min_amount INT DEFAULT 1000,
   max_amount INT DEFAULT 10000000,
   is_active TINYINT(1) DEFAULT 1,
+  is_admin TINYINT(1) DEFAULT 0,
   banned_at TIMESTAMP NULL DEFAULT NULL,
+  bank_name VARCHAR(50) DEFAULT NULL,
+  bank_account VARCHAR(50) DEFAULT NULL,
+  withdrawn_amount BIGINT DEFAULT 0,
   total_received BIGINT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -46,6 +50,7 @@ CREATE TABLE IF NOT EXISTS overlay_settings (
   overlay_accent_color VARCHAR(7) DEFAULT '#818cf8',
   overlay_progress_color VARCHAR(7) DEFAULT '#818cf8',
   overlay_progress_enabled TINYINT(1) DEFAULT 1,
+  action_text VARCHAR(50) DEFAULT 'berdonasi',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -102,4 +107,47 @@ CREATE TABLE IF NOT EXISTS transactions (
   INDEX idx_donation_id (donation_id),
   INDEX idx_status (transaction_status),
   INDEX idx_paid_at (paid_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Withdrawals table
+CREATE TABLE IF NOT EXISTS withdrawals (
+  id VARCHAR(36) PRIMARY KEY,
+  user_id VARCHAR(36) NOT NULL,
+  amount BIGINT NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending',
+  bank_name VARCHAR(50) NOT NULL,
+  bank_account VARCHAR(50) NOT NULL,
+  processed_at TIMESTAMP NULL DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_withdrawals_user (user_id),
+  INDEX idx_withdrawals_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Platform Settings table
+CREATE TABLE IF NOT EXISTS platform_settings (
+  setting_key VARCHAR(50) PRIMARY KEY,
+  setting_value TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Audit Logs table
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  admin_id VARCHAR(36) NOT NULL,
+  admin_username VARCHAR(50) NOT NULL,
+  action VARCHAR(100) NOT NULL,
+  details TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_audit_admin (admin_id),
+  INDEX idx_audit_action (action)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Blacklist Words table
+CREATE TABLE IF NOT EXISTS blacklist_words (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  word VARCHAR(100) NOT NULL UNIQUE,
+  added_by VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -10,6 +10,7 @@ import DashboardQuickLinks from "@/fe/dashboard/components/DashboardQuickLinks";
 import DashboardSkeleton from "@/fe/dashboard/components/DashboardSkeleton";
 import DashboardTabs, { type DashboardTab } from "@/fe/dashboard/components/DashboardTabs";
 import OverviewTab from "@/fe/dashboard/components/OverviewTab";
+import PayoutsTab from "@/fe/dashboard/components/PayoutsTab";
 import RegenerateKeysModal from "@/fe/dashboard/components/RegenerateKeysModal";
 import SettingsTab from "@/fe/dashboard/components/SettingsTab";
 import useDashboard from "@/fe/dashboard/hooks/useDashboard";
@@ -71,7 +72,12 @@ export default function DashboardPage() {
             perPage={dashboard.DONATIONS_PER_PAGE}
             onPageChange={(page) => dashboard.loadDonations(page, dashboard.donationFilter)}
             onReplay={dashboard.replayDonation}
+            onDelete={dashboard.deleteDonation}
           />
+        )}
+
+        {tab === "payouts" && dashboard.stats && (
+          <PayoutsTab balance={dashboard.stats.balance} />
         )}
 
         {tab === "settings" && (
