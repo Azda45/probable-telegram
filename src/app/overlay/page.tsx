@@ -62,7 +62,7 @@ function OverlayTimer({ timer, progressColor }: { timer: OverlayTimerState; prog
 function OverlayContent() {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token") ?? null;
-  const { current, isShowing, isResumedAlert, isPaused, queuedCount, overlayStyle, overlayAnimation, overlayColors, overlayTimer } = useOverlay(token);
+  const { current, isShowing, isResumedAlert, isPaused, isCensored, queuedCount, overlayStyle, overlayAnimation, overlayColors, overlayTimer } = useOverlay(token);
   const shadowParam = searchParams?.get("shadow") ?? overlayStyle;
   const { wrapperClass, shadowClass } = getOverlayAppearance(shadowParam);
 
@@ -77,6 +77,7 @@ function OverlayContent() {
   const alertAnimation = isShowing && isResumedAlert
     ? "none"
     : getOverlayAnimationCss(overlayAnimation, isShowing ? "enter" : "exit");
+
   const alertAnimationWithState = alertAnimation === "none"
     ? "none"
     : `${alertAnimation} ${isPaused ? "paused" : "running"}`;
@@ -93,7 +94,7 @@ function OverlayContent() {
           <OverlayAlertCard
             donorName={current.donor_name}
             amount={current.amount}
-            message={current.message}
+            message={isCensored && current.message ? "*****************" : current.message}
             shadowClass={shadowClass}
             colors={overlayColors}
           />

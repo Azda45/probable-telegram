@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Plus, Trash2, FileText } from "lucide-react";
+import { toast } from "sonner";
+import AdminEmptyState from "./AdminEmptyState";
 
 interface AdminBlacklistTabProps {
   initialWords: any[];
@@ -28,28 +30,28 @@ export default function AdminBlacklistTab({ initialWords }: AdminBlacklistTabPro
       if (res.ok) {
         setWords([{ id: data.id, word: newWord.toLowerCase().trim(), added_by: "You", created_at: new Date().toISOString() }, ...words]);
         setNewWord("");
+        toast.success("Kata berhasil ditambahkan ke blacklist.");
       } else {
-        alert(data.error || "Gagal menambahkan kata");
+        toast.error(data.error || "Gagal menambahkan kata.");
       }
     } catch (err) {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.");
     } finally {
       setIsAdding(false);
     }
   };
 
   const handleDelete = async (id: string, wordText: string) => {
-    if (!confirm(`Hapus kata "${wordText}" dari blacklist?`)) return;
-
     try {
       const res = await fetch(`/api/admin/moderation/blacklist/${id}`, { method: "DELETE" });
       if (res.ok) {
         setWords(words.filter(w => w.id !== id));
+        toast.success(`Kata "${wordText}" berhasil dihapus dari blacklist.`);
       } else {
-        alert("Gagal menghapus kata.");
+        toast.error("Gagal menghapus kata.");
       }
     } catch (err) {
-      alert("Terjadi kesalahan jaringan.");
+      toast.error("Terjadi kesalahan jaringan.");
     }
   };
 
@@ -58,7 +60,7 @@ export default function AdminBlacklistTab({ initialWords }: AdminBlacklistTabPro
       <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <FileText className="w-5 h-5 text-red-500" />
-          Blacklisted Words
+          Kata Terlarang
         </h2>
       </div>
       
@@ -77,7 +79,7 @@ export default function AdminBlacklistTab({ initialWords }: AdminBlacklistTabPro
             className="flex items-center gap-2 px-6 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
-            Add Word
+            Tambah
           </button>
         </form>
         <p className="text-xs text-[var(--color-text-muted)] mt-2">
@@ -89,10 +91,10 @@ export default function AdminBlacklistTab({ initialWords }: AdminBlacklistTabPro
         <table className="w-full text-left">
           <thead>
             <tr className="bg-[var(--color-surface-hover)]">
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Word</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Added By</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Date Added</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] text-right">Actions</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Kata</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Ditambahkan Oleh</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Tanggal</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] text-right">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
@@ -118,11 +120,12 @@ export default function AdminBlacklistTab({ initialWords }: AdminBlacklistTabPro
               </tr>
             ))}
             {words.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-[var(--color-text-muted)]">
-                  Tidak ada kata yang diblacklist.
-                </td>
-              </tr>
+              <AdminEmptyState
+                icon={<FileText className="w-6 h-6" />}
+                title="Tidak ada kata terlarang"
+                description="Belum ada kata yang ditambahkan ke blacklist."
+                colSpan={4}
+              />
             )}
           </tbody>
         </table>

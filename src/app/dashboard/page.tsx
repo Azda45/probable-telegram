@@ -11,6 +11,7 @@ import DashboardSkeleton from "@/fe/dashboard/components/DashboardSkeleton";
 import DashboardTabs, { type DashboardTab } from "@/fe/dashboard/components/DashboardTabs";
 import OverviewTab from "@/fe/dashboard/components/OverviewTab";
 import PayoutsTab from "@/fe/dashboard/components/PayoutsTab";
+import OverlayControlTab from "@/fe/dashboard/components/OverlayControlTab";
 import RegenerateKeysModal from "@/fe/dashboard/components/RegenerateKeysModal";
 import SettingsTab from "@/fe/dashboard/components/SettingsTab";
 import useDashboard from "@/fe/dashboard/hooks/useDashboard";
@@ -26,6 +27,14 @@ export default function DashboardPage() {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const donateUrl = `${origin}/donate/${dashboard.user.username}`;
   const overlayUrl = dashboard.overlayToken ? `${origin}/overlay?token=${dashboard.overlayToken}` : "";
+  const controlUrl = dashboard.overlayToken ? `${origin}/overlay/control?token=${dashboard.overlayToken}` : "";
+  
+  // RAW API URLs for Stream Deck / Macro tools
+  const pauseApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/pause?token=${dashboard.overlayToken}` : "";
+  const skipApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/skip?token=${dashboard.overlayToken}` : "";
+  const censorApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/censor?token=${dashboard.overlayToken}` : "";
+  const testApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/test?token=${dashboard.overlayToken}` : "";
+  const refreshApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/refresh?token=${dashboard.overlayToken}` : "";
 
   const handleLogout = async () => {
     await dashboard.logoutDashboardUser();
@@ -41,12 +50,6 @@ export default function DashboardPage() {
         <DashboardQuickLinks
           donateUrl={donateUrl}
           overlayUrl={overlayUrl}
-          testingSend={dashboard.testingSend}
-          isOverlayPaused={dashboard.isOverlayPaused}
-          onTestOverlay={dashboard.testOverlay}
-          onRegenerate={() => dashboard.setShowRegenModal(true)}
-          onPauseOverlay={dashboard.pauseOverlay}
-          onSkipOverlay={dashboard.skipOverlay}
         />
         <DashboardTabs
           activeTab={tab}
@@ -78,6 +81,25 @@ export default function DashboardPage() {
 
         {tab === "payouts" && dashboard.stats && (
           <PayoutsTab balance={dashboard.stats.balance} />
+        )}
+
+        {tab === "overlay-control" && (
+          <OverlayControlTab
+            controlUrl={controlUrl}
+            pauseApiUrl={pauseApiUrl}
+            skipApiUrl={skipApiUrl}
+            censorApiUrl={censorApiUrl}
+            testApiUrl={testApiUrl}
+            refreshApiUrl={refreshApiUrl}
+            testingSend={dashboard.testingSend}
+            isOverlayPaused={dashboard.isOverlayPaused}
+            onTestOverlay={dashboard.testOverlay}
+            onPauseOverlay={dashboard.pauseOverlay}
+            onSkipOverlay={dashboard.skipOverlay}
+            onToggleCensorOverlay={dashboard.toggleCensorOverlay}
+            onRefreshOverlay={dashboard.refreshOverlay}
+            onRegenerate={() => dashboard.setShowRegenModal(true)}
+          />
         )}
 
         {tab === "settings" && (

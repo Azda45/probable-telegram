@@ -9,7 +9,9 @@ import {
   saveDashboardSettings,
   sendOverlayTestNotification,
   skipOverlayNotification,
+  toggleOverlayCensor,
   toggleOverlayPause,
+  triggerOverlayRefresh,
 } from "../api";
 import { mapOverlaySettingsToForm } from "../forms";
 import type { User } from "@/shared/types/models";
@@ -115,8 +117,30 @@ export default function useDashboardActions({
 
   const skipOverlay = async () => {
     try {
-      const data = await skipOverlayNotification();
+      if (!overlayToken) throw new Error("Token overlay belum tersedia");
+      const data = await skipOverlayNotification(overlayToken);
       toast.success(data.emitted ? "1 notifikasi dilewati" : "Overlay belum terhubung");
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  const toggleCensorOverlay = async () => {
+    try {
+      if (!overlayToken) throw new Error("Token overlay belum tersedia");
+      const data = await toggleOverlayCensor(overlayToken);
+      toast.success(data.isCensored ? "Sensor Aktif" : "Sensor Dimatikan");
+      return data.isCensored;
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  const refreshOverlay = async () => {
+    try {
+      if (!overlayToken) throw new Error("Token overlay belum tersedia");
+      const data = await triggerOverlayRefresh(overlayToken);
+      toast.success(data.emitted ? "Perintah refresh dikirim" : "Overlay belum terhubung");
     } catch (error) {
       toast.error((error as Error).message);
     }
@@ -132,5 +156,7 @@ export default function useDashboardActions({
     saveSettings,
     skipOverlay,
     testOverlay,
+    toggleCensorOverlay,
+    refreshOverlay,
   };
 }

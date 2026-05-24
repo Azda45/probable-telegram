@@ -1,13 +1,21 @@
-import type { PublicDonationPayload } from "@/shared/realtime/events";
+import type { PublicDonationPayload, OverlaySettingsPayload } from "@/shared/realtime/events";
 import { getRedisClient } from "@/be/redis";
 
 const OVERLAY_QUEUE_TTL_SECONDS = 24 * 60 * 60;
 const OVERLAY_BUSY_TTL_SECONDS = 10 * 60;
 export const OVERLAY_PAUSE_CHANNEL = "overlay:pause:events";
 export const OVERLAY_NOTIFICATION_CHANNEL = "overlay:notification:events";
+export const OVERLAY_SETTINGS_UPDATED_CHANNEL = "overlay:settings-updated:events";
+export const OVERLAY_SKIP_CHANNEL = "overlay:skip:events";
+export const OVERLAY_TOGGLE_CENSOR_CHANNEL = "overlay:toggle-censor:events";
+export const OVERLAY_REFRESH_CHANNEL = "overlay:refresh:events";
 
 function pauseKey(userId: string) {
   return `overlay:pause:${userId}`;
+}
+
+function censorKey(userId: string) {
+  return `overlay:censor:${userId}`;
 }
 
 function queueKey(userId: string) {
@@ -148,4 +156,67 @@ export async function dequeueOneOverlayNotification(userId: string): Promise<Que
   if (!raw) return null;
 
   return parseQueuedOverlayNotification(raw);
+}
+
+export interface OverlaySettingsUpdatedEvent {
+  userId: string;
+  settings?: OverlaySettingsPayload;
+}
+
+export interface OverlaySkipEvent {
+  userId: string;
+}
+
+export interface OverlayToggleCensorEvent {
+  userId: string;
+  isCensored: boolean;
+}
+
+export async function publishOverlaySettingsUpdated(userId: string, settings?: OverlaySettingsPayload) {
+  const redis = await getRedisClient();
+  const event: OverlaySettingsUpdatedEvent = { userId, settings };
+  await redis.publish(OVERLAY_SETTINGS_UPDATED_CHANNEL, JSON.stringify(event));
+}
+
+export async function publishOverlaySkip(userId: string) {
+  const redis = await getRedisClient();
+  const event: OverlaySkipEvent = { userId };
+  await redis.publish(OVERLAY_SKIP_CHANNEL, JSON.stringify(event));
+}
+
+export async function getOverlayCensorState(userId: string): Promise<boolean> {
+  const redis = await getRedisClient();
+  const val = await redis.get(censorKey(userId));
+  return val === "1";
+}
+
+export async function setOverlayCensored(userId: string, isCensored: boolean): Promise<boolean> {
+  const redis = await getRedisClient();
+  if (isCensored) {
+    await redis.set(censorKey(userId), "1");
+  } else {
+    await redis.del(censorKey(userId));
+  }
+  return isCensored;
+}
+
+export async function toggleOverlayCensored(userId: string): Promise<boolean> {
+  const current = await getOverlayCensorState(userId);
+  return setOverlayCensored(userId, !current);
+}
+
+export async function publishOverlayToggleCensor(userId: string, isCensored: boolean) {
+  const redis = await getRedisClient();
+  const event: OverlayToggleCensorEvent = { userId, isCensored };
+  await redis.publish(OVERLAY_TOGGLE_CENSOR_CHANNEL, JSON.stringify(event));
+}
+
+export interface OverlayRefreshEvent {
+  userId: string;
+}
+
+export async function publishOverlayRefresh(userId: string) {
+  const redis = await getRedisClient();
+  const event: OverlayRefreshEvent = { userId };
+  await redis.publish(OVERLAY_REFRESH_CHANNEL, JSON.stringify(event));
 }

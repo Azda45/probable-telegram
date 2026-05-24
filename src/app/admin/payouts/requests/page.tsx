@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import AdminPayoutsTab from "@/fe/admin/components/AdminPayoutsTab";
+import AdminLoadingSkeleton from "@/fe/admin/components/AdminLoadingSkeleton";
 
 export default function AdminPayoutRequestsPage() {
   const [payouts, setPayouts] = useState<any[]>([]);
@@ -22,8 +24,6 @@ export default function AdminPayoutRequestsPage() {
   }, []);
 
   const handleAction = async (id: string, action: "approve" | "reject") => {
-    if (!confirm(`Are you sure you want to ${action} this payout?`)) return;
-
     try {
       const res = await fetch(`/api/admin/payouts/${id}`, {
         method: "PATCH",
@@ -32,25 +32,31 @@ export default function AdminPayoutRequestsPage() {
       });
       if (res.ok) {
         setPayouts(payouts.filter(p => p.id !== id));
+        toast.success(action === "approve" ? "Penarikan disetujui." : "Penarikan ditolak.");
       } else {
         const data = await res.json();
-        alert(data.error || `Failed to ${action} payout`);
+        toast.error(data.error || `Gagal ${action === "approve" ? "menyetujui" : "menolak"} penarikan.`);
       }
     } catch (err) {
-      alert("An error occurred");
+      toast.error("Terjadi kesalahan jaringan.");
     }
   };
 
   if (loading) {
-    return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-slate-700 rounded w-3/4"></div></div></div>;
+    return (
+      <div>
+        <h1 className="text-3xl font-bold mb-8">Permintaan Tarik Dana</h1>
+        <AdminLoadingSkeleton type="table" />
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Request Withdraw</h1>
+      <h1 className="text-3xl font-bold mb-8">Permintaan Tarik Dana</h1>
       <AdminPayoutsTab 
         payouts={payouts} 
-        title="Pending Payouts" 
+        title="Penarikan Pending" 
         showActions={true} 
         onApprove={(id) => handleAction(id, "approve")}
         onReject={(id) => handleAction(id, "reject")}

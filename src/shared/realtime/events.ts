@@ -13,9 +13,11 @@ export const REALTIME_EVENTS = {
   OVERLAY_TEST: "overlay:test",
   OVERLAY_ACK: "overlay:ack",
   OVERLAY_SKIP: "overlay:skip",
+  OVERLAY_TOGGLE_CENSOR: "overlay:toggle_censor",
   OVERLAY_SETTINGS_UPDATED: "overlay:settings_updated",
   OVERLAY_PAUSE: "overlay:pause",
   STREAMER_TOTAL_CHANGED: "streamer:total_changed",
+  OVERLAY_REFRESH: "overlay:refresh",
   ERROR: "error",
 } as const;
 
@@ -68,6 +70,7 @@ export interface OverlayStatePayload {
   notifications: PublicDonationPayload[];
   paused: boolean;
   queuedCount: number;
+  isCensored: boolean;
 }
 
 export interface DonationCreatedPayload {
@@ -95,6 +98,11 @@ export interface OverlaySkipPayload {
   userId: string;
 }
 
+export interface OverlayToggleCensorPayload {
+  userId: string;
+  isCensored: boolean;
+}
+
 export interface OverlaySettingsUpdatedPayload {
   userId: string;
   settings?: OverlaySettingsPayload;
@@ -109,6 +117,10 @@ export interface StreamerTotalChangedPayload {
   userId: string;
   totalReceived: number;
   delta: number;
+}
+
+export interface OverlayRefreshPayload {
+  userId: string;
 }
 
 export interface ConnectionReadyPayload {
@@ -139,9 +151,11 @@ export type RealtimeEventMap = {
   [REALTIME_EVENTS.OVERLAY_TEST]: PublicDonationPayload;
   [REALTIME_EVENTS.OVERLAY_ACK]: OverlayAckPayload;
   [REALTIME_EVENTS.OVERLAY_SKIP]: OverlaySkipPayload;
+  [REALTIME_EVENTS.OVERLAY_TOGGLE_CENSOR]: OverlayToggleCensorPayload;
   [REALTIME_EVENTS.OVERLAY_SETTINGS_UPDATED]: OverlaySettingsUpdatedPayload;
   [REALTIME_EVENTS.OVERLAY_PAUSE]: OverlayPausePayload;
   [REALTIME_EVENTS.STREAMER_TOTAL_CHANGED]: StreamerTotalChangedPayload;
+  [REALTIME_EVENTS.OVERLAY_REFRESH]: OverlayRefreshPayload;
   [REALTIME_EVENTS.ERROR]: RealtimeErrorPayload;
 };
 

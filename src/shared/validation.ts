@@ -31,11 +31,27 @@ export const UserSettingsSchema = z
       .string()
       .trim()
       .max(500)
-      .url()
+      .nullable()
       .optional()
-      .transform((value) => (value === "" ? null : value)),
-    bank_name: trimmedString(50).optional(),
-    bank_account: trimmedString(50).optional(),
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL" }
+      )
+      .transform((val) => (val === "" ? null : val)),
+    bank_name: z
+      .string()
+      .trim()
+      .max(50)
+      .nullable()
+      .optional()
+      .transform((val) => (val === "" ? null : val)),
+    bank_account: z
+      .string()
+      .trim()
+      .max(50)
+      .nullable()
+      .optional()
+      .transform((val) => (val === "" ? null : val)),
   })
   .refine(
     (value) =>

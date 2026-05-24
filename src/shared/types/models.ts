@@ -8,6 +8,8 @@ export interface User {
   bio: string | null;
   avatar_url: string | null;
   is_admin: boolean | number;
+  bank_name?: string | null;
+  bank_account?: string | null;
 }
 
 export interface OverlaySettings {
@@ -45,6 +47,7 @@ export interface DonationStats {
   totalDonations: number;
   todayAmount: number;
   todayDonations: number;
+  balance: number;
   topDonors: Array<{ donor_name: string; total: number; count: number }>;
 }
 

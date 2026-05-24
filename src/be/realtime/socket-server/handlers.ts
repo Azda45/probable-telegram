@@ -5,6 +5,8 @@ import { getDonationByOrderIdForStatus, getUserByOverlayToken } from "@/be/servi
 import { createRealtimeEnvelope, REALTIME_EVENTS, REALTIME_ROOMS } from "@/shared/realtime/events";
 import { HEARTBEAT_INTERVAL_MS, ORDER_ID_PATTERN } from "./constants";
 import { deliverNextQueuedOverlayNotification, emitOverlayStateToSocket } from "./overlay-delivery";
+import { waitForSubscriberReady } from "./redis";
+import { removeTestNotification } from "@/be/testQueue";
 
 function emitSocketError(socket: Socket, code: string, message: string, recoverable: boolean, eventId: string) {
   socket.emit(
@@ -30,14 +32,20 @@ export function registerSocketHandlers(socket: Socket) {
     }
 
     try {
+      console.log(`[realtime] socket ${socket.id} joining overlay, awaiting subscriber...`);
+      await waitForSubscriberReady();
+
       const user = await getUserByOverlayToken(token);
       if (!user) {
         emitSocketError(socket, "INVALID_TOKEN", "Overlay token is invalid", false, "invalid-token");
         return;
       }
 
+      console.log(`[realtime] socket ${socket.id} joining room ${REALTIME_ROOMS.overlay(user.id)}`);
       await socket.join(REALTIME_ROOMS.overlay(user.id));
       socket.data.overlayUserId = user.id;
+      
+      console.log(`[realtime] emitting initial state to socket ${socket.id}`);
       await emitOverlayStateToSocket(socket, user);
     } catch (error) {
       console.error("[realtime] overlay join failed", error);
@@ -76,6 +84,8 @@ export function registerSocketHandlers(socket: Socket) {
     try {
       if (!donationId.includes("TEST-")) {
         await pool.execute(`UPDATE donations SET shown_on_overlay = 1 WHERE id = ? AND user_id = ?`, [donationId, userId]);
+      } else {
+        await removeTestNotification(userId, donationId);
       }
       await deliverNextQueuedOverlayNotification(userId, { completedCurrentNotification: true });
     } catch (error) {

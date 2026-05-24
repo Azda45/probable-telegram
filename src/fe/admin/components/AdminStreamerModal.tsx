@@ -2,6 +2,7 @@
 
 import { X, ExternalLink } from "lucide-react";
 import { getAvatarUrl } from "@/shared/avatar";
+import { toast } from "sonner";
 import Image from "next/image";
 
 interface AdminStreamerModalProps {
@@ -16,15 +17,37 @@ export default function AdminStreamerModal({ user, onClose }: AdminStreamerModal
   const donateUrl = `${origin}/donate/${user.username}`;
   const overlayUrl = user.overlay_token ? `${origin}/overlay?token=${user.overlay_token}` : "";
 
+  const handleToggleAdmin = async () => {
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/admin`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_admin: !user.is_admin })
+      });
+      if (res.ok) {
+        toast.success(user.is_admin ? "Akses admin berhasil dicabut." : "Akses admin berhasil diberikan.");
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Gagal mengubah status admin.");
+      }
+    } catch {
+      toast.error("Terjadi kesalahan jaringan.");
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div 
         className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            Streamer Details
+            Detail Streamer
           </h2>
           <button 
             onClick={onClose}
@@ -50,7 +73,7 @@ export default function AdminStreamerModal({ user, onClose }: AdminStreamerModal
               <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-[var(--color-surface-hover)] rounded-full text-sm font-medium border border-[var(--color-border)]">
                 Status: 
                 <span className={user.is_active && !user.banned_at ? "text-green-400" : "text-red-400"}>
-                  {user.is_active && !user.banned_at ? "Active" : "Banned"}
+                  {user.is_active && !user.banned_at ? "Aktif" : "Banned"}
                 </span>
               </div>
             </div>
@@ -58,11 +81,11 @@ export default function AdminStreamerModal({ user, onClose }: AdminStreamerModal
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-[var(--color-surface-hover)] p-4 rounded-xl border border-[var(--color-border)]">
-              <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold mb-1">Total Received</p>
+              <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold mb-1">Total Diterima</p>
               <p className="text-xl font-bold text-green-400">Rp {Number(user.total_received || 0).toLocaleString("id-ID")}</p>
             </div>
             <div className="bg-[var(--color-surface-hover)] p-4 rounded-xl border border-[var(--color-border)]">
-              <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold mb-1">Joined Date</p>
+              <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-semibold mb-1">Tanggal Bergabung</p>
               <p className="text-xl font-bold">{new Date(user.created_at).toLocaleDateString("id-ID")}</p>
             </div>
           </div>
@@ -71,7 +94,7 @@ export default function AdminStreamerModal({ user, onClose }: AdminStreamerModal
             <div>
               <p className="text-sm font-semibold mb-2">Bio</p>
               <p className="text-sm text-[var(--color-text-muted)] bg-[var(--color-surface-hover)] p-3 rounded-lg border border-[var(--color-border)]">
-                {user.bio || "No bio provided."}
+                {user.bio || "Belum ada bio."}
               </p>
             </div>
             
@@ -83,21 +106,13 @@ export default function AdminStreamerModal({ user, onClose }: AdminStreamerModal
                 className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] text-white font-medium rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors text-sm flex-1 justify-center"
               >
                 <ExternalLink size={16} />
-                Visit Donate Page
+                Halaman Donasi
               </a>
               <button
-                onClick={async () => {
-                  if (!confirm(`Are you sure you want to ${user.is_admin ? "revoke admin access from" : "grant admin access to"} this user?`)) return;
-                  const res = await fetch(`/api/admin/users/${user.id}/admin`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ is_admin: !user.is_admin })
-                  });
-                  if (res.ok) window.location.reload();
-                }}
+                onClick={handleToggleAdmin}
                 className={`flex items-center gap-2 px-4 py-2 text-white font-medium rounded-lg transition-colors text-sm flex-1 justify-center ${user.is_admin ? "bg-red-600 hover:bg-red-700" : "bg-yellow-600 hover:bg-yellow-700"}`}
               >
-                {user.is_admin ? "Revoke Admin" : "Make Admin"}
+                {user.is_admin ? "Cabut Admin" : "Jadikan Admin"}
               </button>
               <a 
                 href={overlayUrl} 
@@ -105,7 +120,7 @@ export default function AdminStreamerModal({ user, onClose }: AdminStreamerModal
                 rel="noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 bg-[var(--color-surface-hover)] hover:bg-slate-700 text-white py-2 px-4 rounded-xl font-semibold transition-colors border border-[var(--color-border)]"
               >
-                Inspect Overlay <ExternalLink size={16} />
+                Lihat Overlay <ExternalLink size={16} />
               </a>
             </div>
           </div>

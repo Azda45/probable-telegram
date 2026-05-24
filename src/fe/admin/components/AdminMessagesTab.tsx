@@ -1,6 +1,7 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, MessageSquare } from "lucide-react";
+import AdminEmptyState from "./AdminEmptyState";
 
 interface AdminMessagesTabProps {
   messages: any[];
@@ -11,18 +12,18 @@ export default function AdminMessagesTab({ messages, onDelete }: AdminMessagesTa
   return (
     <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <h2 className="text-xl font-bold">Donation Messages</h2>
+        <h2 className="text-xl font-bold">Pesan Donasi</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-[var(--color-surface-hover)]">
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Date</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Tanggal</th>
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Streamer</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Donator</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Amount</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Message</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] text-right">Action</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Donatur</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Jumlah</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Pesan</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] text-right">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
@@ -59,11 +60,12 @@ export default function AdminMessagesTab({ messages, onDelete }: AdminMessagesTa
               </tr>
             ))}
             {messages.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-[var(--color-text-muted)]">
-                  No donation messages found.
-                </td>
-              </tr>
+              <AdminEmptyState
+                icon={<MessageSquare className="w-6 h-6" />}
+                title="Tidak ada pesan donasi"
+                description="Belum ada pesan donasi yang tercatat."
+                colSpan={6}
+              />
             )}
           </tbody>
         </table>

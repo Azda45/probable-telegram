@@ -3,8 +3,9 @@ import { getAuthUser } from "@/be/auth";
 import { deleteDonationMessage } from "@/be/services/moderation";
 import pool from "@/be/db";
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const user = await getAuthUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

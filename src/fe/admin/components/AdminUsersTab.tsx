@@ -1,5 +1,8 @@
 "use client";
 
+import AdminEmptyState from "./AdminEmptyState";
+import { Users } from "lucide-react";
+
 interface AdminUsersTabProps {
   users: any[];
   onToggleBan: (userId: string, isBanned: boolean) => void;
@@ -11,7 +14,7 @@ export default function AdminUsersTab({ users, onToggleBan, onViewDetails, onTog
   return (
     <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <h2 className="text-xl font-bold">Registered Streamers</h2>
+        <h2 className="text-xl font-bold">Daftar Streamer</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
@@ -19,9 +22,9 @@ export default function AdminUsersTab({ users, onToggleBan, onViewDetails, onTog
             <tr className="bg-[var(--color-surface-hover)]">
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Username</th>
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Email</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Total Received</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Total Diterima</th>
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Status</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Action</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
@@ -41,7 +44,7 @@ export default function AdminUsersTab({ users, onToggleBan, onViewDetails, onTog
                     {isBanned ? (
                       <span className="text-xs bg-red-500/20 text-red-500 px-2 py-1 rounded-full font-medium">Banned</span>
                     ) : (
-                      <span className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded-full font-medium">Active</span>
+                      <span className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded-full font-medium">Aktif</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap flex gap-2">
@@ -54,7 +57,7 @@ export default function AdminUsersTab({ users, onToggleBan, onViewDetails, onTog
                             : "bg-red-500/10 hover:bg-red-500/20 text-red-500"
                         }`}
                       >
-                        {isBanned ? "Unban" : "Ban User"}
+                        {isBanned ? "Buka Ban" : "Ban"}
                       </button>
                     )}
                     <button
@@ -65,18 +68,19 @@ export default function AdminUsersTab({ users, onToggleBan, onViewDetails, onTog
                           : "bg-[var(--color-surface-hover)] hover:bg-yellow-500/20 text-[var(--color-text-muted)] hover:text-yellow-500 border border-[var(--color-border)]"
                       }`}
                     >
-                      {u.is_admin ? "Revoke Admin" : "Make Admin"}
+                      {u.is_admin ? "Cabut Admin" : "Jadikan Admin"}
                     </button>
                   </td>
                 </tr>
               );
             })}
             {users.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-[var(--color-text-muted)]">
-                  No users found.
-                </td>
-              </tr>
+              <AdminEmptyState
+                icon={<Users className="w-6 h-6" />}
+                title="Tidak ada pengguna"
+                description="Belum ada pengguna yang terdaftar."
+                colSpan={5}
+              />
             )}
           </tbody>
         </table>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AdminPayoutAccountsTab from "@/fe/admin/components/AdminPayoutAccountsTab";
+import AdminLoadingSkeleton from "@/fe/admin/components/AdminLoadingSkeleton";
 
 export default function AdminCreatorPayoutAccountsPage() {
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -19,12 +20,17 @@ export default function AdminCreatorPayoutAccountsPage() {
   }, []);
 
   if (loading) {
-    return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-slate-700 rounded w-3/4"></div></div></div>;
+    return (
+      <div>
+        <h1 className="text-3xl font-bold mb-8">Akun Payout</h1>
+        <AdminLoadingSkeleton type="table" />
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Payout Accounts</h1>
+      <h1 className="text-3xl font-bold mb-8">Akun Payout</h1>
       <AdminPayoutAccountsTab accounts={accounts} />
     </div>
   );

@@ -17,6 +17,7 @@ interface UseOverlayRealtimeArgs {
   isFrozenRef: React.MutableRefObject<boolean>;
   setIsFrozen: (value: boolean) => void;
   setIsPaused: (value: boolean) => void;
+  setIsCensored: (value: boolean) => void;
   skipActiveNotification: () => void;
   socketRef: React.MutableRefObject<RealtimeClientSocket | null>;
   syncServerQueuedCount: (serverQueuedCount: number, paused: boolean) => void;
@@ -39,6 +40,7 @@ export default function useOverlayRealtime({
   isFrozenRef,
   setIsFrozen,
   setIsPaused,
+  setIsCensored,
   skipActiveNotification,
   socketRef,
   syncServerQueuedCount,
@@ -74,6 +76,7 @@ export default function useOverlayRealtime({
       isFrozenRef.current = payload.paused;
       setIsPaused(payload.paused);
       setIsFrozen(payload.paused);
+      setIsCensored(payload.isCensored);
       syncServerQueuedCount(payload.queuedCount, payload.paused);
       for (const notification of payload.notifications) handlePendingNotification(toNotification(notification));
     };
@@ -94,6 +97,17 @@ export default function useOverlayRealtime({
       syncServerQueuedCount(realtimeEvent.payload.queuedCount, paused);
     };
 
+    const handleRefresh = () => {
+      window.location.reload();
+    };
+
+    const handleToggleCensor = (event: unknown) => {
+      const realtimeEvent = event as RealtimeEvent<typeof REALTIME_EVENTS.OVERLAY_TOGGLE_CENSOR>;
+      if (realtimeEvent?.payload) {
+        setIsCensored(realtimeEvent.payload.isCensored);
+      }
+    };
+
     createRealtimeSocket()
       .then((client) => {
         if (disposed) {
@@ -111,6 +125,8 @@ export default function useOverlayRealtime({
         client.on(REALTIME_EVENTS.OVERLAY_SETTINGS_UPDATED, handleSettingsUpdated);
         client.on(REALTIME_EVENTS.OVERLAY_PAUSE, handlePause);
         client.on(REALTIME_EVENTS.OVERLAY_SKIP, skipActiveNotification);
+        client.on(REALTIME_EVENTS.OVERLAY_TOGGLE_CENSOR, handleToggleCensor);
+        client.on(REALTIME_EVENTS.OVERLAY_REFRESH, handleRefresh);
         if (client.connected) client.emit("overlay:join", { token });
       })
       .catch((error) => {
@@ -127,6 +143,8 @@ export default function useOverlayRealtime({
         socket.off(REALTIME_EVENTS.OVERLAY_SETTINGS_UPDATED, handleSettingsUpdated);
         socket.off(REALTIME_EVENTS.OVERLAY_PAUSE, handlePause);
         socket.off(REALTIME_EVENTS.OVERLAY_SKIP, skipActiveNotification);
+        socket.off(REALTIME_EVENTS.OVERLAY_TOGGLE_CENSOR, handleToggleCensor);
+        socket.off(REALTIME_EVENTS.OVERLAY_REFRESH, handleRefresh);
         socket.disconnect();
       }
       if (socketRef.current === socket) socketRef.current = null;
@@ -141,6 +159,7 @@ export default function useOverlayRealtime({
     isFrozenRef,
     setIsFrozen,
     setIsPaused,
+    setIsCensored,
     socketRef,
   ]);
 }

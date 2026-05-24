@@ -18,6 +18,7 @@ export function useOverlay(token: string | null) {
   const [isShowing, setIsShowing] = useState(false);
   const [isResumedAlert, setIsResumedAlert] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isCensored, setIsCensored] = useState(false);
   const [queuedCount, setQueuedCount] = useState(0);
 
   const activeNotifIdRef = useRef<string | null>(null);
@@ -147,17 +148,25 @@ export function useOverlay(token: string | null) {
   ]);
 
   const enqueueNotification = useCallback((notif: OverlayNotification, forceReplay = false) => {
+    console.log(`[overlay] enqueueNotification received: ${notif.id}, forceReplay: ${forceReplay}, showing: ${showingRef.current}`);
     const amount = Number(notif.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
+      console.log(`[overlay] invalid amount, acking immediately: ${notif.id}`);
       ackNotification(notif.id);
       return;
     }
 
-    if (!forceReplay && seenIdsRef.current.has(notif.id)) return;
+    if (!forceReplay && seenIdsRef.current.has(notif.id)) {
+      console.log(`[overlay] already seen, dropping: ${notif.id}`);
+      return;
+    }
     seenIdsRef.current.add(notif.id);
 
     if (!isFrozenRef.current && !showingRef.current) {
+      console.log(`[overlay] showing notification: ${notif.id}`);
       showNotification({ notif: { ...notif, amount }, forceReplay });
+    } else {
+      console.log(`[overlay] skipped showing: isFrozen=${isFrozenRef.current}, showing=${showingRef.current}`);
     }
   }, [ackNotification, showNotification]);
 
@@ -187,6 +196,10 @@ export function useOverlay(token: string | null) {
     ackNotification(donationId);
   }, [ackNotification, loadAlertState, saveAlertState, stopOverlayTimer]);
 
+  const handleToggleCensor = useCallback((newIsCensored: boolean) => {
+    setIsCensored(newIsCensored);
+  }, []);
+
   const setFrozenState = useCallback((value: boolean) => {
     isFrozenRef.current = value;
   }, []);
@@ -198,11 +211,12 @@ export function useOverlay(token: string | null) {
     isFrozenRef,
     setIsFrozen: setFrozenState,
     setIsPaused,
+    setIsCensored: handleToggleCensor,
     skipActiveNotification,
     socketRef,
     syncServerQueuedCount,
     token,
   });
 
-  return { current, isShowing, isResumedAlert, isPaused, queuedCount, overlayStyle, overlayAnimation, overlayColors, overlayTimer };
+  return { current, isShowing, isResumedAlert, isPaused, isCensored, queuedCount, overlayStyle, overlayAnimation, overlayColors, overlayTimer };
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { emitOverlaySkip } from "@/be/realtime/socket-server";
+import { emitOverlayToggleCensor } from "@/be/realtime/socket-server/emitters";
 import { getUserByOverlayToken } from "@/be/services";
 import { SESSION_TOKEN_PATTERN } from "@/shared/auth-constants";
 import { apiErrorResponse } from "@/be/security/request-security";
@@ -18,15 +18,14 @@ export async function GET(request: NextRequest) {
       return apiErrorResponse(request, { error: "Invalid overlay token" }, 401);
     }
 
-    const emitted = await emitOverlaySkip(user.id);
+    const isCensored = await emitOverlayToggleCensor(user.id);
 
     return NextResponse.json({
-      message: emitted ? "Skip command sent" : "Overlay socket unavailable",
-      emitted,
+      message: "Toggle censor command sent",
+      isCensored,
     });
   } catch (error: unknown) {
-    console.error("Skip overlay error:", error);
-    return apiErrorResponse(request, { error: "Gagal skip notifikasi" }, 500);
+    console.error("Toggle censor overlay error:", error);
+    return apiErrorResponse(request, { error: "Gagal toggle sensor notifikasi" }, 500);
   }
 }
-

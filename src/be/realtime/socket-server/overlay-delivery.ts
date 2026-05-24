@@ -8,8 +8,10 @@ import {
   dequeueOneOverlayNotification,
   enqueueOverlayNotification,
   getOverlayPauseState,
+  getOverlayCensorState,
   isOverlayBusy,
   setOverlayBusy,
+  publishOverlayNotificationEvent,
   type OverlayPauseState,
 } from "@/be/overlay-state";
 import {
@@ -62,13 +64,14 @@ async function getPendingOverlayNotifications(userId: string): Promise<PublicDon
 export async function emitOverlayStateToSocket(socket: Socket, user: OverlayOwner) {
   const settings = await getOverlaySettingsByUserId(user.id);
   const pauseState = await getOverlayPauseState(user.id);
+  const isCensored = await getOverlayCensorState(user.id);
   const notifications = pauseState.paused ? [] : await getPendingOverlayNotifications(user.id);
 
   socket.emit(
     REALTIME_EVENTS.OVERLAY_STATE,
     createRealtimeEnvelope(
       REALTIME_EVENTS.OVERLAY_STATE,
-      { userId: user.id, settings: toOverlaySettingsPayload(settings), notifications, paused: pauseState.paused, queuedCount: pauseState.queuedCount },
+      { userId: user.id, settings: toOverlaySettingsPayload(settings), notifications, paused: pauseState.paused, queuedCount: pauseState.queuedCount, isCensored },
       `${REALTIME_EVENTS.OVERLAY_STATE}:${user.id}:${Date.now()}`
     )
   );
@@ -87,11 +90,18 @@ export function emitOverlayPauseState(userId: string, state: OverlayPauseState) 
 
 export async function emitOverlayNotification(payload: PublicDonationPayload, eventKind: "notification" | "replay" | "test" = "notification") {
   const io = getSocketServer();
-  if (!io) return false;
+  if (!io) {
+    console.log(`[realtime] io not available in this context, publishing to Redis channel for ${payload.userId}`);
+    await publishOverlayNotificationEvent(payload, eventKind);
+    return true;
+  }
 
   const pauseState = await getOverlayPauseState(payload.userId);
   const busy = await isOverlayBusy(payload.userId);
+  console.log(`[realtime] emitOverlayNotification for ${payload.userId}: paused=${pauseState.paused}, busy=${busy}`);
+  
   if (pauseState.paused || busy) {
+    console.log(`[realtime] overlay is paused/busy, enqueueing notification for ${payload.userId}`);
     const updatedState = await enqueueOverlayNotification(payload, eventKind);
     emitOverlayPauseState(payload.userId, updatedState);
     return true;
@@ -104,6 +114,7 @@ export async function emitOverlayNotification(payload: PublicDonationPayload, ev
       ? REALTIME_EVENTS.OVERLAY_TEST
       : REALTIME_EVENTS.OVERLAY_NOTIFICATION;
 
+  console.log(`[realtime] emitting ${eventName} to socket room ${REALTIME_ROOMS.overlay(payload.userId)}`);
   io.to(REALTIME_ROOMS.overlay(payload.userId)).emit(
     eventName,
     createRealtimeEnvelope(eventName, payload, `${eventName}:${payload.donationId}:${payload.paidAt}`)

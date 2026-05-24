@@ -15,6 +15,8 @@ export const initialDashboardSettingsForm: DashboardSettingsForm = {
   min_amount: 1000,
   avatar_url: "",
   max_amount: 10000000,
+  bank_name: "",
+  bank_account: "",
 };
 
 export const initialDashboardOverlayForm: DashboardOverlayForm = {

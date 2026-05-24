@@ -1,4 +1,12 @@
-import { getOverlayPauseState } from "@/be/overlay-state";
+import {
+  getOverlayPauseState,
+  getOverlayCensorState,
+  publishOverlaySettingsUpdated,
+  publishOverlaySkip,
+  publishOverlayToggleCensor,
+  toggleOverlayCensored,
+  publishOverlayRefresh,
+} from "@/be/overlay-state";
 import {
   createRealtimeEnvelope,
   REALTIME_EVENTS,
@@ -26,7 +34,10 @@ export function emitPaymentStatus(payload: PaymentStatusPayload) {
 
 export function emitOverlaySettingsUpdated(userId: string, settings?: OverlaySettingsPayload) {
   const io = getSocketServer();
-  if (!io) return false;
+  if (!io) {
+    publishOverlaySettingsUpdated(userId, settings).catch((e: any) => console.warn(e));
+    return false;
+  }
 
   io.to(REALTIME_ROOMS.overlay(userId)).emit(
     REALTIME_EVENTS.OVERLAY_SETTINGS_UPDATED,
@@ -46,7 +57,10 @@ export async function emitOverlayPause(userId: string, paused: boolean = true, q
 
 export async function emitOverlaySkip(userId: string) {
   const io = getSocketServer();
-  if (!io) return false;
+  if (!io) {
+    await publishOverlaySkip(userId);
+    return false;
+  }
 
   const overlaySockets = await io.in(REALTIME_ROOMS.overlay(userId)).allSockets();
   if (overlaySockets.size === 0) return false;
@@ -54,6 +68,42 @@ export async function emitOverlaySkip(userId: string) {
   io.to(REALTIME_ROOMS.overlay(userId)).emit(
     REALTIME_EVENTS.OVERLAY_SKIP,
     createRealtimeEnvelope(REALTIME_EVENTS.OVERLAY_SKIP, { userId }, `${REALTIME_EVENTS.OVERLAY_SKIP}:${userId}:${Date.now()}`)
+  );
+  return true;
+}
+
+export async function emitOverlayToggleCensor(userId: string) {
+  const isCensored = await toggleOverlayCensored(userId);
+  const io = getSocketServer();
+  
+  if (!io) {
+    await publishOverlayToggleCensor(userId, isCensored);
+    return isCensored;
+  }
+
+  const overlaySockets = await io.in(REALTIME_ROOMS.overlay(userId)).allSockets();
+  if (overlaySockets.size === 0) return isCensored;
+
+  io.to(REALTIME_ROOMS.overlay(userId)).emit(
+    REALTIME_EVENTS.OVERLAY_TOGGLE_CENSOR,
+    createRealtimeEnvelope(REALTIME_EVENTS.OVERLAY_TOGGLE_CENSOR, { userId, isCensored }, `${REALTIME_EVENTS.OVERLAY_TOGGLE_CENSOR}:${userId}:${Date.now()}`)
+  );
+  return isCensored;
+}
+
+export async function emitOverlayRefresh(userId: string) {
+  const io = getSocketServer();
+  if (!io) {
+    await publishOverlayRefresh(userId);
+    return false;
+  }
+
+  const overlaySockets = await io.in(REALTIME_ROOMS.overlay(userId)).allSockets();
+  if (overlaySockets.size === 0) return false;
+
+  io.to(REALTIME_ROOMS.overlay(userId)).emit(
+    REALTIME_EVENTS.OVERLAY_REFRESH,
+    createRealtimeEnvelope(REALTIME_EVENTS.OVERLAY_REFRESH, { userId }, `${REALTIME_EVENTS.OVERLAY_REFRESH}:${userId}:${Date.now()}`)
   );
   return true;
 }

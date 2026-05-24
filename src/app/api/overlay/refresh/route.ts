@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { emitOverlaySkip } from "@/be/realtime/socket-server";
+import { emitOverlayRefresh } from "@/be/realtime/socket-server";
 import { getUserByOverlayToken } from "@/be/services";
 import { SESSION_TOKEN_PATTERN } from "@/shared/auth-constants";
 import { apiErrorResponse } from "@/be/security/request-security";
@@ -18,15 +18,14 @@ export async function GET(request: NextRequest) {
       return apiErrorResponse(request, { error: "Invalid overlay token" }, 401);
     }
 
-    const emitted = await emitOverlaySkip(user.id);
+    const emitted = await emitOverlayRefresh(user.id);
 
     return NextResponse.json({
-      message: emitted ? "Skip command sent" : "Overlay socket unavailable",
+      message: emitted ? "Refresh command sent" : "Overlay socket unavailable",
       emitted,
     });
   } catch (error: unknown) {
-    console.error("Skip overlay error:", error);
-    return apiErrorResponse(request, { error: "Gagal skip notifikasi" }, 500);
+    console.error("Refresh overlay error:", error);
+    return apiErrorResponse(request, { error: "Gagal refresh overlay" }, 500);
   }
 }
-

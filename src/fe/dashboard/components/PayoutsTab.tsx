@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowUpRight, Clock, CheckCircle } from "lucide-react";
+import { ArrowUpRight, Clock, CheckCircle, XCircle } from "lucide-react";
 
 interface PayoutsTabProps {
   balance: number;
@@ -92,9 +92,13 @@ export default function PayoutsTab({ balance }: PayoutsTabProps) {
                       <span className="flex items-center gap-1.5 text-yellow-500 bg-yellow-500/10 w-max px-2.5 py-1 rounded-lg text-xs font-bold">
                         <Clock size={14} /> Pending
                       </span>
-                    ) : (
+                    ) : w.status === 'approved' ? (
                       <span className="flex items-center gap-1.5 text-green-500 bg-green-500/10 w-max px-2.5 py-1 rounded-lg text-xs font-bold">
                         <CheckCircle size={14} /> Berhasil
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-red-500 bg-red-500/10 w-max px-2.5 py-1 rounded-lg text-xs font-bold">
+                        <XCircle size={14} /> Ditolak
                       </span>
                     )}
                   </td>

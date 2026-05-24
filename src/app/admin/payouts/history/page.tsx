@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AdminPayoutsTab from "@/fe/admin/components/AdminPayoutsTab";
+import AdminLoadingSkeleton from "@/fe/admin/components/AdminLoadingSkeleton";
 
 export default function AdminPayoutHistoryPage() {
   const [payouts, setPayouts] = useState<any[]>([]);
@@ -9,7 +10,6 @@ export default function AdminPayoutHistoryPage() {
 
   useEffect(() => {
     setLoading(true);
-    // Fetch all for history, or we could fetch approved/rejected
     fetch("/api/admin/payouts?status=all")
       .then(res => res.json())
       .then(data => {
@@ -22,15 +22,20 @@ export default function AdminPayoutHistoryPage() {
   }, []);
 
   if (loading) {
-    return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-slate-700 rounded w-3/4"></div></div></div>;
+    return (
+      <div>
+        <h1 className="text-3xl font-bold mb-8">Riwayat Penarikan</h1>
+        <AdminLoadingSkeleton type="table" />
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Riwayat Withdraw</h1>
+      <h1 className="text-3xl font-bold mb-8">Riwayat Penarikan</h1>
       <AdminPayoutsTab 
         payouts={payouts} 
-        title="Payout History" 
+        title="Riwayat Penarikan" 
         showActions={false} 
       />
     </div>

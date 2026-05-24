@@ -44,10 +44,10 @@ export async function getUserBySessionToken(token: string | undefined): Promise<
   const tokenHash = hashToken(token);
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT u.id, u.username, u.email, u.display_name, u.avatar_url, u.bio,
-            u.stream_key, u.overlay_token, u.min_amount, u.max_amount,
-            u.total_received, u.created_at, u.is_admin
-     FROM sessions s
-     JOIN users u ON u.id = s.user_id
+             u.stream_key, u.overlay_token, u.min_amount, u.max_amount,
+             u.total_received, u.created_at, u.bank_name, u.bank_account, u.is_admin
+      FROM sessions s
+      JOIN users u ON u.id = s.user_id
      WHERE s.session_token_hash = ?
        AND s.expires_at > NOW()
        AND u.is_active = 1

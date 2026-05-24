@@ -111,6 +111,8 @@ export default function useDashboard() {
     testingSend,
     skipOverlay: actions.skipOverlay,
     testOverlay: actions.testOverlay,
+    toggleCensorOverlay: actions.toggleCensorOverlay,
+    refreshOverlay: actions.refreshOverlay,
     user,
   };
 }

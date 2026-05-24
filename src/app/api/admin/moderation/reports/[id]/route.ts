@@ -4,8 +4,9 @@ import pool from "@/be/db";
 import { ensureReportsTable } from "@/be/schema/reports";
 import { createAuditLog } from "@/be/services/settings";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   try {
+    const params = await props.params;
     const user = await getAuthUser();
     if (!user || !user.is_admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 

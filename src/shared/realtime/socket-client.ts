@@ -3,10 +3,12 @@ type SocketHandler = (payload: unknown) => void;
 export interface RealtimeClientSocket {
   id?: string;
   connected: boolean;
+  disconnected?: boolean;
   on(event: string, handler: SocketHandler): void;
   off(event: string, handler?: SocketHandler): void;
   emit(event: string, payload?: unknown): void;
   disconnect(): void;
+  connect(): void;
 }
 
 type SocketIoFactory = (url?: string, options?: Record<string, unknown>) => RealtimeClientSocket;
@@ -41,7 +43,7 @@ export async function loadSocketClient(): Promise<void> {
     }
 
     const script = document.createElement("script");
-    script.src = "/socket.io/socket.io.js";
+    script.src = "/api/socket/socket.io.js";
     script.async = true;
     script.dataset.realtimeClient = "socket.io";
     script.onload = () => {
@@ -66,8 +68,8 @@ export async function createRealtimeSocket(): Promise<RealtimeClientSocket> {
     throw new Error("Socket.IO client unavailable");
   }
 
-  return window.io(undefined, {
-    path: "/socket.io",
+  const client = window.io(undefined, {
+    path: "/api/socket",
     transports: ["websocket"],
     reconnection: true,
     reconnectionAttempts: Infinity,
@@ -75,5 +77,12 @@ export async function createRealtimeSocket(): Promise<RealtimeClientSocket> {
     reconnectionDelayMax: 30000,
     randomizationFactor: 0.5,
     timeout: 10000,
+    forceNew: true,
   });
+  
+  if (client.disconnected) {
+    client.connect();
+  }
+  
+  return client;
 }

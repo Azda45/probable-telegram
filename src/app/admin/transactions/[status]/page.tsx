@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import AdminTransactionsTab from "@/fe/admin/components/AdminTransactionsTab";
+import AdminLoadingSkeleton from "@/fe/admin/components/AdminLoadingSkeleton";
 
 export default function AdminTransactionsPage() {
   const params = useParams();
@@ -32,10 +33,6 @@ export default function AdminTransactionsPage() {
       .finally(() => setLoading(false));
   }, [statusQuery]);
 
-  if (loading) {
-    return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-slate-700 rounded w-3/4"></div></div></div>;
-  }
-
   const titleMap: Record<string, string> = {
     "all": "Semua Donasi",
     "pending": "Donasi Pending",
@@ -44,9 +41,18 @@ export default function AdminTransactionsPage() {
     "refund": "Refund / Dispute",
   };
 
+  if (loading) {
+    return (
+      <div>
+        <h1 className="text-3xl font-bold mb-8">{titleMap[statusParam] || "Transaksi"}</h1>
+        <AdminLoadingSkeleton type="table" />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">{titleMap[statusParam] || "Transactions"}</h1>
+      <h1 className="text-3xl font-bold mb-8">{titleMap[statusParam] || "Transaksi"}</h1>
       <AdminTransactionsTab donations={donations} />
     </div>
   );

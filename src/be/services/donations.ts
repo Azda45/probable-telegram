@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import type { RowDataPacket } from "mysql2";
 import pool from "@/be/db";
-import { ensureDonationSecurityColumns } from "@/be/schema";
+import { ensureDonationSecurityColumns, ensureUserCoreColumns } from "@/be/schema";
 import { hashDonationStatusToken } from "./tokens";
 import type { Donation, DonationStatusUpdate } from "./types";
 
@@ -178,8 +178,11 @@ export async function getDonationStats(userId: string): Promise<{
   totalDonations: number;
   todayAmount: number;
   todayDonations: number;
+  balance: number;
   topDonors: Array<{ donor_name: string; total: number; count: number }>;
 }> {
+  await ensureUserCoreColumns();
+
   const [totalRows] = await pool.execute<RowDataPacket[]>(
     `SELECT COALESCE(SUM(d.amount), 0) as totalAmount, COUNT(*) as totalDonations
      FROM donations d
@@ -202,12 +205,19 @@ export async function getDonationStats(userId: string): Promise<{
      GROUP BY d.donor_name ORDER BY total DESC LIMIT 10`,
     [userId]
   );
+  const [balanceRows] = await pool.execute<RowDataPacket[]>(
+    `SELECT COALESCE(total_received, 0) - COALESCE(withdrawn_amount, 0) as balance
+     FROM users
+     WHERE id = ?`,
+    [userId]
+  );
 
   return {
     totalAmount: totalRows[0].totalAmount,
     totalDonations: totalRows[0].totalDonations,
     todayAmount: todayRows[0].todayAmount,
     todayDonations: todayRows[0].todayDonations,
+    balance: Number(balanceRows[0]?.balance || 0),
     topDonors: topDonors as Array<{ donor_name: string; total: number; count: number }>,
   };
 }

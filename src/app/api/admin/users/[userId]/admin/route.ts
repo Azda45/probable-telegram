@@ -8,17 +8,13 @@ const schema = z.object({
   is_admin: z.boolean()
 });
 
-export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ userId: string }> }) {
   try {
+    const params = await props.params;
     const user = await getAuthUser();
     
     if (!user || !user.is_admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    // Don't let admin demote themselves
-    if (params.userId === user.id && !schema.parse(await req.json().catch(()=>({}))).is_admin) {
-        return NextResponse.json({ error: "Cannot demote yourself" }, { status: 400 });
     }
 
     const body = await req.json();
@@ -26,6 +22,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+
+    // Don't let admin demote themselves
+    if (params.userId === user.id && !parsed.data.is_admin) {
+      return NextResponse.json({ error: "Tidak bisa mencabut akses admin diri sendiri" }, { status: 400 });
     }
 
     await toggleUserAdmin(params.userId, parsed.data.is_admin);

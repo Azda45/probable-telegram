@@ -1,5 +1,8 @@
 "use client";
 
+import AdminEmptyState from "./AdminEmptyState";
+import { Wallet } from "lucide-react";
+
 interface AdminPayoutsTabProps {
   payouts: any[];
   title: string;
@@ -18,12 +21,12 @@ export default function AdminPayoutsTab({ payouts, title, showActions = false, o
         <table className="w-full text-left">
           <thead>
             <tr className="bg-[var(--color-surface-hover)]">
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Date</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Tanggal</th>
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Creator</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Amount</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Bank Details</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Jumlah</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Info Bank</th>
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Status</th>
-              {showActions && <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] text-right">Actions</th>}
+              {showActions && <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] text-right">Aksi</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
@@ -44,9 +47,9 @@ export default function AdminPayoutsTab({ payouts, title, showActions = false, o
                 </td>
                 <td className="px-6 py-4 text-sm whitespace-nowrap">
                   {p.status === 'approved' ? (
-                    <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded text-xs font-bold uppercase">Approved</span>
+                    <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded text-xs font-bold uppercase">Disetujui</span>
                   ) : p.status === 'rejected' ? (
-                    <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded text-xs font-bold uppercase">Rejected</span>
+                    <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded text-xs font-bold uppercase">Ditolak</span>
                   ) : (
                     <span className="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-xs font-bold uppercase">Pending</span>
                   )}
@@ -57,24 +60,25 @@ export default function AdminPayoutsTab({ payouts, title, showActions = false, o
                       onClick={() => onApprove && onApprove(p.id)}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-500 mr-2 transition-colors"
                     >
-                      Approve
+                      Setujui
                     </button>
                     <button 
                       onClick={() => onReject && onReject(p.id)}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
                     >
-                      Reject
+                      Tolak
                     </button>
                   </td>
                 )}
               </tr>
             ))}
             {payouts.length === 0 && (
-              <tr>
-                <td colSpan={showActions ? 6 : 5} className="px-6 py-8 text-center text-[var(--color-text-muted)]">
-                  No payout requests found.
-                </td>
-              </tr>
+              <AdminEmptyState
+                icon={<Wallet className="w-6 h-6" />}
+                title="Tidak ada permintaan penarikan"
+                description="Belum ada permintaan penarikan yang tercatat."
+                colSpan={showActions ? 6 : 5}
+              />
             )}
           </tbody>
         </table>

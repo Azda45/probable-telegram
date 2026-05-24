@@ -1,5 +1,8 @@
 "use client";
 
+import AdminEmptyState from "./AdminEmptyState";
+import { CreditCard } from "lucide-react";
+
 interface AdminBalancesTabProps {
   balances: any[];
 }
@@ -8,16 +11,16 @@ export default function AdminBalancesTab({ balances }: AdminBalancesTabProps) {
   return (
     <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="px-6 py-4 border-b border-[var(--color-border)]">
-        <h2 className="text-xl font-bold">Creator Balances</h2>
+        <h2 className="text-xl font-bold">Saldo Creator</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-[var(--color-surface-hover)]">
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Creator</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Gross Received</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Total Withdrawn</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Current Balance</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Total Diterima</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Sudah Ditarik</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Saldo Saat Ini</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
@@ -38,11 +41,12 @@ export default function AdminBalancesTab({ balances }: AdminBalancesTabProps) {
               </tr>
             ))}
             {balances.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-[var(--color-text-muted)]">
-                  No creators found.
-                </td>
-              </tr>
+              <AdminEmptyState
+                icon={<CreditCard className="w-6 h-6" />}
+                title="Tidak ada creator"
+                description="Belum ada data saldo creator."
+                colSpan={4}
+              />
             )}
           </tbody>
         </table>

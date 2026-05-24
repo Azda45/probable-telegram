@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AdminOverviewTab from "@/fe/admin/components/AdminOverviewTab";
+import AdminLoadingSkeleton from "@/fe/admin/components/AdminLoadingSkeleton";
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -19,12 +20,17 @@ export default function AdminDashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-slate-700 rounded w-3/4"></div><div className="space-y-2"><div className="h-4 bg-slate-700 rounded"></div><div className="h-4 bg-slate-700 rounded w-5/6"></div></div></div></div>;
+    return (
+      <div>
+        <h1 className="text-3xl font-bold mb-8">Ringkasan Dashboard</h1>
+        <AdminLoadingSkeleton type="cards" />
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Dashboard Overview</h1>
+      <h1 className="text-3xl font-bold mb-8">Ringkasan Dashboard</h1>
       {stats && <AdminOverviewTab stats={stats} analytics={analytics} />}
     </div>
   );

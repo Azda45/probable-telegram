@@ -12,6 +12,7 @@ export {
   emitOverlayPause,
   emitOverlaySettingsUpdated,
   emitOverlaySkip,
+  emitOverlayRefresh,
   emitPaymentStatus,
 } from "./socket-server/emitters";
 
@@ -20,7 +21,7 @@ export function initializeSocketServer(httpServer: HttpServer): SocketIOServer {
   if (existingServer) return existingServer;
 
   const io = new SocketIOServer(httpServer, {
-    path: "/socket.io",
+    path: "/api/socket",
     cors: { origin: env.ALLOWED_ORIGINS, methods: ["GET", "POST"] },
     pingInterval: HEARTBEAT_INTERVAL_MS,
     pingTimeout: HEARTBEAT_TIMEOUT_MS,

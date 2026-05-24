@@ -8,6 +8,7 @@ const links = [
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "v1.0.0-dev";
 
   return (
     <footer
@@ -57,7 +58,13 @@ export default function Footer() {
 
         <div className="mt-8 flex flex-col gap-3 border-t border-[var(--color-border)] pt-6 text-sm text-[var(--color-text-muted)] sm:flex-row sm:items-center sm:justify-between">
           <p>© <span suppressHydrationWarning>{currentYear}</span> DonasiKu. All rights reserved.</p>
-          <p>Simple. Fast. Reliable.</p>
+          <div className="flex items-center gap-4">
+            <p>Simple. Fast. Reliable.</p>
+            <span className="hidden sm:inline text-[var(--color-border)]">|</span>
+            <span className="font-mono text-xs text-[var(--color-text-muted)]/60 uppercase tracking-wider" title="Build ID">
+              {buildId}
+            </span>
+          </div>
         </div>
       </div>
     </footer>

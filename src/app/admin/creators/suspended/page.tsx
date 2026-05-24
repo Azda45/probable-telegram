@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import AdminUsersTab from "@/fe/admin/components/AdminUsersTab";
 import AdminStreamerModal from "@/fe/admin/components/AdminStreamerModal";
+import AdminLoadingSkeleton from "@/fe/admin/components/AdminLoadingSkeleton";
 
 export default function AdminCreatorsSuspendedPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -19,8 +21,6 @@ export default function AdminCreatorsSuspendedPage() {
   }, []);
 
   const handleToggleBan = async (userId: string, currentStatus: boolean) => {
-    if (!confirm(`Are you sure you want to unban this user?`)) return;
-
     try {
       const res = await fetch(`/api/admin/users/${userId}/ban`, {
         method: "PATCH",
@@ -29,22 +29,28 @@ export default function AdminCreatorsSuspendedPage() {
       });
       if (res.ok) {
         setUsers(users.filter(u => u.id !== userId)); // Remove from suspended list
+        toast.success("Pengguna berhasil di-unban.");
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to update ban status");
+        toast.error(data.error || "Gagal mengubah status ban.");
       }
     } catch (err) {
-      alert("An error occurred");
+      toast.error("Terjadi kesalahan jaringan.");
     }
   };
 
   if (loading) {
-    return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-slate-700 rounded w-3/4"></div></div></div>;
+    return (
+      <div>
+        <h1 className="text-3xl font-bold mb-8">Creator Suspended</h1>
+        <AdminLoadingSkeleton type="table" />
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Suspended Creators</h1>
+      <h1 className="text-3xl font-bold mb-8">Creator Suspended</h1>
       <AdminUsersTab users={users} onToggleBan={handleToggleBan} onViewDetails={(u) => setSelectedUser(u)} />
       
       {selectedUser && (

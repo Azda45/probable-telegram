@@ -1,5 +1,8 @@
 "use client";
 
+import AdminEmptyState from "./AdminEmptyState";
+import { Receipt } from "lucide-react";
+
 interface AdminTransactionsTabProps {
   donations: any[];
 }
@@ -8,16 +11,16 @@ export default function AdminTransactionsTab({ donations }: AdminTransactionsTab
   return (
     <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center">
-        <h2 className="text-xl font-bold">Global Transactions</h2>
+        <h2 className="text-xl font-bold">Daftar Transaksi</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-[var(--color-surface-hover)]">
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Date</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Donator</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Tanggal</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Donatur</th>
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Streamer</th>
-              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Amount</th>
+              <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Jumlah</th>
               <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Status</th>
             </tr>
           </thead>
@@ -34,21 +37,22 @@ export default function AdminTransactionsTab({ donations }: AdminTransactionsTab
                 </td>
                 <td className="px-6 py-4 text-sm whitespace-nowrap">
                   {d.transaction_status === 'settlement' || d.transaction_status === 'capture' ? (
-                    <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded text-xs font-bold uppercase">Success</span>
+                    <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded text-xs font-bold uppercase">Sukses</span>
                   ) : d.transaction_status === 'pending' ? (
                     <span className="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-xs font-bold uppercase">Pending</span>
                   ) : (
-                    <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded text-xs font-bold uppercase">{d.transaction_status || "Failed"}</span>
+                    <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded text-xs font-bold uppercase">{d.transaction_status || "Gagal"}</span>
                   )}
                 </td>
               </tr>
             ))}
             {donations.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-[var(--color-text-muted)]">
-                  No transactions found.
-                </td>
-              </tr>
+              <AdminEmptyState
+                icon={<Receipt className="w-6 h-6" />}
+                title="Tidak ada transaksi"
+                description="Belum ada transaksi donasi yang tercatat."
+                colSpan={5}
+              />
             )}
           </tbody>
         </table>

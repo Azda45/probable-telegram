@@ -79,8 +79,12 @@ export async function replayOverlayDonation(donationId: string) {
   }));
 }
 
-export async function skipOverlayNotification() {
-  return ensureOk<{ emitted: boolean; error?: string }>(await fetch("/api/overlay/skip", { method: "POST" }));
+export async function skipOverlayNotification(overlayToken: string) {
+  return ensureOk<{ emitted: boolean; error?: string }>(await fetch(`/api/overlay/skip?token=${encodeURIComponent(overlayToken)}`));
+}
+
+export async function toggleOverlayCensor(overlayToken: string) {
+  return ensureOk<{ isCensored: boolean; error?: string }>(await fetch(`/api/overlay/censor?token=${encodeURIComponent(overlayToken)}`));
 }
 
 export async function deleteDashboardDonation(donationId: string) {
@@ -89,6 +93,10 @@ export async function deleteDashboardDonation(donationId: string) {
 
 export async function toggleOverlayPause(overlayToken: string) {
   return ensureOk<{ paused: boolean; error?: string }>(await fetch(`/api/overlay/pause?token=${encodeURIComponent(overlayToken)}`));
+}
+
+export async function triggerOverlayRefresh(overlayToken: string) {
+  return ensureOk<{ emitted: boolean; error?: string }>(await fetch(`/api/overlay/refresh?token=${encodeURIComponent(overlayToken)}`));
 }
 
 export function logoutDashboardUser() {

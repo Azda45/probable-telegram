@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import AdminAuditLogsTab from "@/fe/admin/components/AdminAuditLogsTab";
+import AdminLoadingSkeleton from "@/fe/admin/components/AdminLoadingSkeleton";
 
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -17,12 +18,17 @@ export default function AdminAuditLogsPage() {
   }, []);
 
   if (loading) {
-    return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-slate-700 rounded w-3/4"></div></div></div>;
+    return (
+      <div>
+        <h1 className="text-3xl font-bold mb-8">Log Audit</h1>
+        <AdminLoadingSkeleton type="table" />
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">Audit Log</h1>
+      <h1 className="text-3xl font-bold mb-8">Log Audit</h1>
       <AdminAuditLogsTab logs={logs} />
     </div>
   );

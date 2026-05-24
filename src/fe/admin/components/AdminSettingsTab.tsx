@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Save } from "lucide-react";
+import { toast } from "sonner";
 
 interface AdminSettingsTabProps {
   initialSettings: Record<string, string>;
@@ -18,27 +19,32 @@ export default function AdminSettingsTab({ initialSettings, onSave }: AdminSetti
 
   const handleSave = async () => {
     setIsSaving(true);
-    await onSave(settings);
+    try {
+      await onSave(settings);
+      toast.success("Pengaturan platform berhasil disimpan!");
+    } catch {
+      toast.error("Gagal menyimpan pengaturan.");
+    }
     setIsSaving(false);
   };
 
   return (
     <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-2xl">
       <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center">
-        <h2 className="text-xl font-bold">Platform Settings</h2>
+        <h2 className="text-xl font-bold">Pengaturan Platform</h2>
         <button 
           onClick={handleSave}
           disabled={isSaving}
           className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] text-white font-medium rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          {isSaving ? "Saving..." : "Save Changes"}
+          {isSaving ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
       <div className="p-6 space-y-6">
         
         <div>
-          <label className="block text-sm font-semibold mb-2">Platform Fee Percentage (%)</label>
+          <label className="block text-sm font-semibold mb-2">Persentase Fee Platform (%)</label>
           <p className="text-xs text-[var(--color-text-muted)] mb-3">Potongan platform yang dikenakan untuk setiap donasi masuk.</p>
           <input 
             type="number"
@@ -49,7 +55,7 @@ export default function AdminSettingsTab({ initialSettings, onSave }: AdminSetti
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2">Minimum Withdrawal Amount (Rp)</label>
+          <label className="block text-sm font-semibold mb-2">Minimum Penarikan (Rp)</label>
           <p className="text-xs text-[var(--color-text-muted)] mb-3">Batas minimum saldo yang bisa ditarik oleh kreator.</p>
           <input 
             type="number"
@@ -60,15 +66,15 @@ export default function AdminSettingsTab({ initialSettings, onSave }: AdminSetti
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2">Maintenance Mode</label>
+          <label className="block text-sm font-semibold mb-2">Mode Maintenance</label>
           <p className="text-xs text-[var(--color-text-muted)] mb-3">Aktifkan untuk memblokir akses ke web (kecuali admin).</p>
           <select
             value={settings.maintenance_mode || "false"}
             onChange={(e) => handleChange("maintenance_mode", e.target.value)}
             className="w-full bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-lg px-4 py-2 focus:outline-none focus:border-[var(--color-primary)] transition-colors"
           >
-            <option value="false">Off (Normal)</option>
-            <option value="true">On (Maintenance)</option>
+            <option value="false">Nonaktif (Normal)</option>
+            <option value="true">Aktif (Maintenance)</option>
           </select>
         </div>
 
