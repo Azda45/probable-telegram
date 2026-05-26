@@ -3,6 +3,7 @@
 import { CreditCard } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import type { DashboardSettingsForm } from "../../types";
+import SettingsField from "./SettingsField";
 
 interface PayoutSettingsCardProps {
   settingsForm: DashboardSettingsForm;
@@ -12,46 +13,37 @@ interface PayoutSettingsCardProps {
 
 export default function PayoutSettingsCard({ settingsForm, setSettingsForm, onSaveSettings }: PayoutSettingsCardProps) {
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-green-500/10 text-green-500 rounded-xl">
-          <CreditCard className="w-5 h-5" />
-        </div>
-        <div>
-          <h2 className="text-xl font-bold">Payout Account</h2>
-          <p className="text-sm text-[var(--color-text-muted)]">Informasi rekening untuk penarikan dana.</p>
-        </div>
-      </div>
+    <div className="card h-full" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+      <h3 className="text-lg font-bold flex items-center" style={{ marginBottom: '1.25rem', gap: '0.5rem' }}>
+        <CreditCard className="w-5 h-5 text-[var(--color-success)]" /> Payout Account
+      </h3>
+      <p className="text-sm text-[var(--color-text-muted)]" style={{ marginBottom: '1.5rem', marginTop: '-0.5rem' }}>Informasi rekening untuk penarikan dana.</p>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1.5 text-[var(--color-text-muted)]">Nama Bank / E-Wallet</label>
+      <div className="grid grid-cols-1 flex-1" style={{ rowGap: '1.25rem' }}>
+        <SettingsField label="Nama Bank / E-Wallet">
           <input
             type="text"
-            className="w-full px-4 py-2.5 bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-all text-white placeholder-slate-500"
+            className="input"
             value={settingsForm.bank_name || ""}
             onChange={(e) => setSettingsForm({ ...settingsForm, bank_name: e.target.value })}
             placeholder="Contoh: BCA, Mandiri, GoPay"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1.5 text-[var(--color-text-muted)]">Nomor Rekening / No HP</label>
+        </SettingsField>
+        <SettingsField label="Nomor Rekening / No HP">
           <input
             type="text"
-            className="w-full px-4 py-2.5 bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-all text-white placeholder-slate-500"
+            className="input"
             value={settingsForm.bank_account || ""}
             onChange={(e) => setSettingsForm({ ...settingsForm, bank_account: e.target.value })}
             placeholder="Nomor rekening yang valid"
           />
-        </div>
+        </SettingsField>
       </div>
 
-      <div className="mt-6 flex justify-end">
-        <button
-          onClick={onSaveSettings}
-          className="px-6 py-2 bg-[var(--color-primary)] text-white font-medium rounded-xl hover:bg-[var(--color-primary-hover)] transition-colors shadow-lg shadow-[var(--color-primary)]/20"
-        >
-          Save Account
+      <div className="border-t border-[var(--color-border)] flex justify-end" style={{ marginTop: '1.5rem', paddingTop: '1.25rem' }}>
+        <button className="btn btn-primary flex items-center" style={{ gap: '0.5rem' }} onClick={onSaveSettings}>
+          <CreditCard className="w-4 h-4" />
+          Simpan Akun
         </button>
       </div>
     </div>

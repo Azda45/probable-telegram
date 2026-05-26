@@ -10,8 +10,8 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ stats, showBalance, onToggleBalance }: OverviewTabProps) {
   return (
-    <div>
-      <div className="card mb-10 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/5 border-violet-500/20 overflow-hidden relative">
+    <div className="flex flex-col gap-6">
+      <div className="card bg-gradient-to-br from-violet-500/10 to-fuchsia-500/5 border-violet-500/20 overflow-hidden relative">
         <div className="absolute top-0 right-0 p-8 opacity-5">
           <Banknote className="w-32 h-32" />
         </div>

@@ -11,11 +11,11 @@ interface DonationSettingsCardProps {
 
 export default function DonationSettingsCard({ settingsForm, setSettingsForm, onSaveSettings }: DonationSettingsCardProps) {
   return (
-    <div className="card">
-      <h3 className="text-lg font-bold mb-5 flex items-center gap-2">
+    <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+      <h3 className="text-lg font-bold flex items-center" style={{ marginBottom: '1.25rem', gap: '0.5rem' }}>
         <CircleDollarSign className="w-5 h-5 text-[var(--color-primary)]" /> Pengaturan Donasi
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: '1rem' }}>
         <SettingsField label="Minimal Donasi (Rp)">
           <input
             className="input"
@@ -37,8 +37,8 @@ export default function DonationSettingsCard({ settingsForm, setSettingsForm, on
           />
         </SettingsField>
       </div>
-      <div className="mt-6 pt-5 border-t border-[var(--color-border)] flex justify-end">
-        <button className="btn btn-primary flex items-center gap-2" onClick={onSaveSettings}>
+      <div className="border-t border-[var(--color-border)] flex justify-end" style={{ marginTop: '1.5rem', paddingTop: '1.25rem' }}>
+        <button className="btn btn-primary flex items-center" style={{ gap: '0.5rem' }} onClick={onSaveSettings}>
           <Save className="w-4 h-4" />
           Simpan Pengaturan Donasi
         </button>

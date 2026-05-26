@@ -1,8 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import type { DonationRecord } from "@/shared/types/models";
 import { formatRupiah, timeAgo } from "@/shared/utils";
-import StatusBadge from "./StatusBadge";
 import ReplayButton from "./ReplayButton";
 import DonationPagination from "./DonationPagination";
+import { Mail, Clock, MessageSquare, User, Eye, EyeOff } from "lucide-react";
 
 interface DonationTableProps {
   donations: DonationRecord[];
@@ -23,65 +26,79 @@ export default function DonationTable({
   perPage,
   onPageChange,
   onReplay,
-  onDelete,
 }: DonationTableProps) {
+  const [revealedEmails, setRevealedEmails] = useState<Set<string>>(new Set());
   const totalPages = Math.ceil(total / perPage);
+
+  const toggleEmail = (id: string) => {
+    setRevealedEmails((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <div>
-      <div className="table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Donatur</th>
-              <th>Jumlah</th>
-              <th>Pesan</th>
-              <th>Status</th>
-              <th>Waktu</th>
-              {(onReplay || onDelete) && <th className="w-20 text-center">Aksi</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {donations.length === 0 ? (
-              <tr>
-                <td colSpan={(onReplay || onDelete) ? 6 : 5} className="text-center py-12 text-[var(--color-text-muted)]">
-                  Belum ada donasi
-                </td>
-              </tr>
-            ) : (
-              donations.map((donation) => (
-                <tr key={donation.id}>
-                  <td className="font-semibold text-[var(--color-text-primary)]">{donation.donor_name}</td>
-                  <td className="font-semibold text-[var(--color-success)]">{formatRupiah(donation.amount)}</td>
-                  <td className="max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">
-                    {donation.message || <span className="text-[var(--color-text-muted)] italic">Tanpa pesan</span>}
-                  </td>
-                  <td><StatusBadge status={donation.transaction_status} /></td>
-                  <td className="whitespace-nowrap">{timeAgo(donation.created_at)}</td>
-                  {(onReplay || onDelete) && (
-                    <td>
-                      <div className="flex items-center gap-2 justify-center">
-                        {onReplay && PAID_STATUSES.has(donation.transaction_status) && (
-                          <ReplayButton donationId={donation.id} onReplay={onReplay} />
-                        )}
-                        {onDelete && (
-                          <button
-                            onClick={() => onDelete(donation.id)}
-                            className="p-2 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
-                            title="Hapus / Censor Pesan"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {donations.length === 0 ? (
+        <div className="card text-center py-12 text-[var(--color-text-muted)]">
+          Belum ada donasi
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {donations.map((donation) => {
+            const isRevealed = revealedEmails.has(donation.id);
+            return (
+              <div key={donation.id} className="card p-5 flex flex-col gap-3 relative hover:border-[var(--color-primary)]/50 transition-colors">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="font-semibold text-lg text-[var(--color-text-primary)] flex items-center gap-2">
+                    <User size={16} className="text-violet-400" />
+                    {donation.donor_name}
+                  </div>
+                  <div className="font-bold text-[var(--color-success)] bg-green-500/10 px-2 py-1 rounded-md text-sm whitespace-nowrap">
+                    {formatRupiah(donation.amount)}
+                  </div>
+                </div>
+                
+                <div className="text-[13px] text-[var(--color-text-muted)] flex items-center gap-2">
+                  <Mail size={14} />
+                  <span className="truncate flex-1" title={isRevealed ? (donation.donor_email || "") : "Sembunyikan Email"}>
+                    {isRevealed ? (donation.donor_email || "-") : "•••••••••••••••••"}
+                  </span>
+                  <button 
+                    onClick={() => toggleEmail(donation.id)} 
+                    className="p-1 hover:text-[var(--color-text-primary)] transition-colors opacity-70 hover:opacity-100"
+                    title={isRevealed ? "Sembunyikan" : "Tampilkan"}
+                  >
+                    {isRevealed ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+
+                <div className="text-[13px] text-[var(--color-text-muted)] flex items-center gap-2 mb-2">
+                  <Clock size={14} />
+                  {timeAgo(donation.created_at)}
+                </div>
+
+                <div 
+                  className="flex-1 bg-[var(--color-surface-hover)] rounded-xl border border-[var(--color-border)]/30 text-[var(--color-text-primary)] mt-1"
+                  style={{ padding: '16px' }}
+                >
+                  <p className="line-clamp-3 overflow-hidden text-ellipsis break-words text-[15px] leading-relaxed">
+                    {donation.message || <span className="italic opacity-50 text-[var(--color-text-muted)]">Tanpa pesan</span>}
+                  </p>
+                </div>
+
+                {onReplay && PAID_STATUSES.has(donation.transaction_status) && (
+                  <div className="mt-2 flex justify-end">
+                    <ReplayButton donationId={donation.id} onReplay={onReplay} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {total > perPage && (
         <DonationPagination page={page} totalPages={totalPages} onPageChange={onPageChange} />

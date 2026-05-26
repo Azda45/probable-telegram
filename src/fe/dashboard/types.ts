@@ -12,6 +12,10 @@ export interface DashboardSettingsForm {
   max_amount: number;
   bank_name: string;
   bank_account: string;
+  youtube_url: string;
+  instagram_url: string;
+  twitter_url: string;
+  facebook_url: string;
 }
 
 export interface DashboardOverlayForm extends OverlayAnimationSettings {

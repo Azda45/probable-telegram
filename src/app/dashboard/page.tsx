@@ -30,11 +30,11 @@ export default function DashboardPage() {
   const controlUrl = dashboard.overlayToken ? `${origin}/overlay/control?token=${dashboard.overlayToken}` : "";
   
   // RAW API URLs for Stream Deck / Macro tools
-  const pauseApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/pause?token=${dashboard.overlayToken}` : "";
-  const skipApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/skip?token=${dashboard.overlayToken}` : "";
-  const censorApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/censor?token=${dashboard.overlayToken}` : "";
-  const testApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/test?token=${dashboard.overlayToken}` : "";
-  const refreshApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/refresh?token=${dashboard.overlayToken}` : "";
+  const pauseApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/control/pause?token=${dashboard.overlayToken}` : "";
+  const skipApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/control/skip?token=${dashboard.overlayToken}` : "";
+  const censorApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/control/censor?token=${dashboard.overlayToken}` : "";
+  const testApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/control/test?token=${dashboard.overlayToken}` : "";
+  const refreshApiUrl = dashboard.overlayToken ? `${origin}/api/overlay/control/refresh?token=${dashboard.overlayToken}` : "";
 
   const handleLogout = async () => {
     await dashboard.logoutDashboardUser();

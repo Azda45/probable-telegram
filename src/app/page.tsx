@@ -17,7 +17,7 @@ export default function HomePage() {
   const [user, setUser] = useState<{ display_name: string } | null>(null);
 
   useEffect(() => {
-    fetch("/api/user")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user`)
       .then(async (r) => {
         if (r.ok) {
           const data = await r.json();
@@ -27,7 +27,7 @@ export default function HomePage() {
   }, []);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, { method: "POST" });
     setUser(null);
     router.refresh();
   };

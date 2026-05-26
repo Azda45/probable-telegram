@@ -17,6 +17,10 @@ export const initialDashboardSettingsForm: DashboardSettingsForm = {
   max_amount: 10000000,
   bank_name: "",
   bank_account: "",
+  youtube_url: "",
+  instagram_url: "",
+  twitter_url: "",
+  facebook_url: "",
 };
 
 export const initialDashboardOverlayForm: DashboardOverlayForm = {
@@ -43,6 +47,10 @@ export function mapUserToSettingsForm(user: User): DashboardSettingsForm {
     max_amount: user.max_amount || 10000000,
     bank_name: user.bank_name || "",
     bank_account: user.bank_account || "",
+    youtube_url: user.youtube_url || "",
+    instagram_url: user.instagram_url || "",
+    twitter_url: user.twitter_url || "",
+    facebook_url: user.facebook_url || "",
   };
 }
 

@@ -37,6 +37,10 @@ export default async function DonatePage({ params }: { params: Promise<{ usernam
     avatar_url: user.avatar_url,
     min_amount: user.min_amount,
     max_amount: user.max_amount,
+    youtube_url: user.youtube_url,
+    instagram_url: user.instagram_url,
+    twitter_url: user.twitter_url,
+    facebook_url: user.facebook_url,
   };
 
   return <DonateClient user={userInfo} username={resolvedParams.username} />;

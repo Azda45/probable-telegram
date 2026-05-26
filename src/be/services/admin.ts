@@ -65,7 +65,7 @@ export async function getAdminUsers(page: number = 1, limit: number = 20): Promi
 
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT id, username, email, display_name, avatar_url, bio,
-            stream_key, overlay_token, min_amount, max_amount,
+            overlay_token, min_amount, max_amount,
             total_received, created_at, is_admin, banned_at, is_active
      FROM users
      ORDER BY created_at DESC

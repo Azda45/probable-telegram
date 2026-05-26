@@ -45,6 +45,8 @@ export interface AlertLifecycleState {
   audioPlayed: boolean;
   completed: boolean;
   completedAt?: number;
+  elapsedMs?: number;
+  updatedAt?: number;
 }
 
 export interface QueuedNotification {

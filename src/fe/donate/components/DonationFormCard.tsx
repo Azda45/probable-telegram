@@ -66,13 +66,14 @@ export default function DonationFormCard({
                   style={{
                     padding: "0.75rem",
                     borderRadius: 12,
-                    border: "1px solid var(--color-border)",
-                    background: form.amount === amount ? "var(--color-primary)" : "var(--color-surface-elevated)",
+                    border: form.amount === amount ? "2px solid var(--color-primary)" : "1px solid rgba(255,255,255,0.15)",
+                    background: form.amount === amount ? "var(--color-primary)" : "rgba(255,255,255,0.05)",
                     color: form.amount === amount ? "white" : "var(--color-text-secondary)",
                     fontWeight: 600,
-                    fontSize: "0.75rem",
+                    fontSize: "0.85rem",
                     cursor: "pointer",
                     transition: "all 0.2s",
+                    boxShadow: form.amount === amount ? "0 4px 14px var(--color-primary-dark, rgba(99,102,241,0.4))" : "none",
                   }}
                 >
                   {formatRupiah(amount)}
@@ -107,8 +108,8 @@ export default function DonationFormCard({
 
         <div className="input-group" style={{ marginBottom: "1.5rem" }}>
           <label>Pesan <span style={{ fontWeight: 400, color: "var(--color-text-muted)" }}>(opsional)</span></label>
-          <textarea className="input" placeholder="Tulis pesan untuk streamer..." value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} maxLength={500} rows={3} />
-          <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", textAlign: "right", display: "block", marginTop: 4 }}>{form.message.length}/500</span>
+          <textarea className="input" placeholder="Tulis pesan untuk streamer..." value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} maxLength={250} rows={3} style={{ resize: 'none' }} />
+          <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", textAlign: "right", display: "block", marginTop: 4 }}>{form.message.length}/250</span>
         </div>
 
         <button type="submit" className="btn btn-primary btn-lg" disabled={submitting} style={{ width: "100%" }}>

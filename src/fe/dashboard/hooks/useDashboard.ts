@@ -49,7 +49,7 @@ export default function useDashboard() {
     }
   }, []);
 
-  const loadDonations = useCallback(async (page = 1, filter: DonationFilter = "all") => {
+  const loadDonations = useCallback(async (page = 1, filter: DonationFilter = "success") => {
     try {
       const data = await fetchDashboardDonations(page, filter);
       setDonations(data.donations);

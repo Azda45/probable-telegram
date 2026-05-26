@@ -99,6 +99,7 @@ export default function ReportStreamerModal({ userId, onClose }: ReportStreamerM
                 required
                 rows={4}
                 className="w-full px-4 py-2.5 bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-all text-white placeholder-[var(--color-text-muted)] resize-none"
+                style={{ resize: 'none' }}
               />
             </div>
             

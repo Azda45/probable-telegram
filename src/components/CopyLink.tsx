@@ -20,20 +20,23 @@ export default function CopyLink({ label, url, actions }: CopyLinkProps) {
       <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
         {label}
       </label>
-      <input
-        readOnly
-        value={url}
-        className="input h-9 text-[13px] bg-[var(--color-surface)] border-dashed"
-      />
-      <div className="flex flex-wrap gap-2 mt-2">
-        <button
-          onClick={handleCopy}
-          className="btn btn-secondary btn-sm flex-1 flex items-center justify-center gap-2 min-w-[100px]"
-        >
-          <Copy className="w-4 h-4" />
-          Salin
-        </button>
-        {actions}
+      <div className="flex flex-col sm:flex-row" style={{ gap: '0.5rem' }}>
+        <input
+          readOnly
+          value={url}
+          className="input h-9 text-[13px] bg-[var(--color-surface)] border-dashed flex-1"
+        />
+        <div className="flex shrink-0" style={{ gap: '0.5rem' }}>
+          <button
+            onClick={handleCopy}
+            className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center"
+            style={{ gap: '0.5rem' }}
+          >
+            <Copy className="w-4 h-4" />
+            Salin
+          </button>
+          {actions}
+        </div>
       </div>
     </div>
   );

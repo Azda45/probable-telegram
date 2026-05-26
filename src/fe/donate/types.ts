@@ -6,6 +6,10 @@ export interface UserInfo {
   avatar_url: string | null;
   min_amount: number;
   max_amount: number;
+  youtube_url?: string | null;
+  instagram_url?: string | null;
+  twitter_url?: string | null;
+  facebook_url?: string | null;
 }
 
 export type DonationStage = "form" | "qr" | "success";

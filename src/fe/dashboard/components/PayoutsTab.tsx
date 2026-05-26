@@ -44,7 +44,7 @@ export default function PayoutsTab({ balance }: PayoutsTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="card flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-medium text-[var(--color-text-muted)]">Saldo Tersedia</h2>
           <div className="text-3xl font-bold text-green-400 mt-1">
@@ -54,14 +54,14 @@ export default function PayoutsTab({ balance }: PayoutsTabProps) {
         <button
           onClick={handleWithdraw}
           disabled={balance <= 0 || requesting}
-          className="px-6 py-3 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+          className="btn shrink-0 bg-green-500 hover:bg-green-600 shadow-lg shadow-[var(--color-success)]/20 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          <ArrowUpRight size={20} />
+          <ArrowUpRight size={18} />
           {requesting ? "Memproses..." : "Cairkan Dana"}
         </button>
       </div>
 
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-sm">
+      <div className="card !p-0 overflow-hidden">
         <div className="px-6 py-4 border-b border-[var(--color-border)]">
           <h3 className="font-bold text-lg">Riwayat Penarikan</h3>
         </div>

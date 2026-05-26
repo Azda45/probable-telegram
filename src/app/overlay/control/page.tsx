@@ -8,6 +8,7 @@ import {
   skipOverlayNotification,
   toggleOverlayCensor,
   toggleOverlayPause,
+  triggerOverlayRefresh,
 } from "@/fe/dashboard/api";
 import { toast } from "sonner";
 
@@ -23,7 +24,7 @@ export default function OverlayControlPage() {
     if (!token) return;
     try {
       setTestingSend(true);
-      await sendOverlayTestNotification();
+      await sendOverlayTestNotification(token);
       toast.success("Notifikasi test berhasil dikirim.");
     } catch (err: any) {
       toast.error(err.message);
@@ -67,8 +68,7 @@ export default function OverlayControlPage() {
   const handleRefreshOverlay = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch(`/api/overlay/refresh?token=${encodeURIComponent(token)}`);
-      if (!res.ok) throw new Error("Gagal refresh overlay");
+      await triggerOverlayRefresh(token);
       toast.success("Overlay Di-refresh");
     } catch (err: any) {
       toast.error(err.message);

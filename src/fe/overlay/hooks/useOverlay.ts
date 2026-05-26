@@ -93,7 +93,12 @@ export function useOverlay(token: string | null) {
     const lifecycle = existingState || createFreshAlertState(notif);
 
     if (existingState && !forceReplay) {
-      elapsedRef.current = Math.min(Date.now() - existingState.startedAt, lifecycle.durationMs);
+      if (existingState.elapsedMs !== undefined && existingState.updatedAt !== undefined) {
+        const timeSinceSave = isFrozenRef.current ? 0 : (Date.now() - existingState.updatedAt);
+        elapsedRef.current = Math.min(existingState.elapsedMs + timeSinceSave, lifecycle.durationMs);
+      } else {
+        elapsedRef.current = Math.min(Date.now() - existingState.startedAt, lifecycle.durationMs);
+      }
     }
 
     if (lifecycle.completed || lifecycle.durationMs - elapsedRef.current <= 0) {
@@ -147,6 +152,25 @@ export function useOverlay(token: string | null) {
     stopOverlayTimer,
   ]);
 
+  useEffect(() => {
+    if (!current) return;
+    const state = loadAlertState(current.id);
+    if (state && !state.completed) {
+      saveAlertState({ ...state, elapsedMs: elapsedRef.current, updatedAt: Date.now() });
+    }
+  }, [isPaused, current, loadAlertState, saveAlertState, elapsedRef]);
+
+  useEffect(() => {
+    if (!current) return;
+    const intervalId = setInterval(() => {
+      const state = loadAlertState(current.id);
+      if (state && !state.completed) {
+        saveAlertState({ ...state, elapsedMs: elapsedRef.current, updatedAt: Date.now() });
+      }
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [current, loadAlertState, saveAlertState, elapsedRef]);
+
   const enqueueNotification = useCallback((notif: OverlayNotification, forceReplay = false) => {
     console.log(`[overlay] enqueueNotification received: ${notif.id}, forceReplay: ${forceReplay}, showing: ${showingRef.current}`);
     const amount = Number(notif.amount);
@@ -160,15 +184,25 @@ export function useOverlay(token: string | null) {
       console.log(`[overlay] already seen, dropping: ${notif.id}`);
       return;
     }
-    seenIdsRef.current.add(notif.id);
+
+    const existingState = loadAlertState(notif.id);
+    const isPartiallyPlayed = existingState && !existingState.completed;
+
+    if (isPartiallyPlayed && !showingRef.current) {
+      console.log(`[overlay] restoring partially played notification: ${notif.id}`);
+      seenIdsRef.current.add(notif.id);
+      showNotification({ notif: { ...notif, amount }, forceReplay });
+      return;
+    }
 
     if (!isFrozenRef.current && !showingRef.current) {
       console.log(`[overlay] showing notification: ${notif.id}`);
+      seenIdsRef.current.add(notif.id);
       showNotification({ notif: { ...notif, amount }, forceReplay });
     } else {
       console.log(`[overlay] skipped showing: isFrozen=${isFrozenRef.current}, showing=${showingRef.current}`);
     }
-  }, [ackNotification, showNotification]);
+  }, [ackNotification, showNotification, loadAlertState]);
 
   const handlePendingNotification = useCallback((notif: OverlayNotification) => {
     const storedState = loadAlertState(notif.id);

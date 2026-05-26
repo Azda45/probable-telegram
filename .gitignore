@@ -47,3 +47,6 @@ AGENTS.md
 bun.lock
 package-lock.json
 tasks
+
+/admin
+

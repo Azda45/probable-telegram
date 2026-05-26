@@ -24,7 +24,7 @@ export const RegisterSchema = z.object({
 export const UserSettingsSchema = z
   .object({
     display_name: trimmedString(100).optional(),
-    bio: z.string().trim().max(500).nullable().optional(),
+    bio: z.string().trim().max(150).nullable().optional(),
     min_amount: z.coerce.number().int().min(1000).max(100_000_000).optional(),
     max_amount: z.coerce.number().int().min(1000).max(100_000_000).optional(),
     avatar_url: z
@@ -51,6 +51,50 @@ export const UserSettingsSchema = z
       .max(50)
       .nullable()
       .optional()
+      .transform((val) => (val === "" ? null : val)),
+    youtube_url: z
+      .string()
+      .trim()
+      .max(255)
+      .nullable()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL" }
+      )
+      .transform((val) => (val === "" ? null : val)),
+    instagram_url: z
+      .string()
+      .trim()
+      .max(255)
+      .nullable()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL" }
+      )
+      .transform((val) => (val === "" ? null : val)),
+    twitter_url: z
+      .string()
+      .trim()
+      .max(255)
+      .nullable()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL" }
+      )
+      .transform((val) => (val === "" ? null : val)),
+    facebook_url: z
+      .string()
+      .trim()
+      .max(255)
+      .nullable()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL" }
+      )
       .transform((val) => (val === "" ? null : val)),
   })
   .refine(
@@ -81,7 +125,7 @@ export const DonationCreateSchema = z.object({
   message: z
     .string()
     .trim()
-    .max(500)
+    .max(250)
     .optional()
     .transform((value) => (value ? value.replace(/[<>]/g, "") : undefined)),
 });

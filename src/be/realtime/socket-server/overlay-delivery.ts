@@ -65,7 +65,8 @@ export async function emitOverlayStateToSocket(socket: Socket, user: OverlayOwne
   const settings = await getOverlaySettingsByUserId(user.id);
   const pauseState = await getOverlayPauseState(user.id);
   const isCensored = await getOverlayCensorState(user.id);
-  const notifications = pauseState.paused ? [] : await getPendingOverlayNotifications(user.id);
+  // Send notifications even if paused so the client can restore the currently playing one from localStorage
+  const notifications = await getPendingOverlayNotifications(user.id);
 
   socket.emit(
     REALTIME_EVENTS.OVERLAY_STATE,
@@ -136,7 +137,19 @@ export async function deliverNextQueuedOverlayNotification(userId: string, optio
     return false;
   }
 
-  const queuedNotification = await dequeueOneOverlayNotification(userId);
+  let queuedNotification = await dequeueOneOverlayNotification(userId);
+  
+  if (!queuedNotification) {
+    const pending = await getPendingOverlayNotifications(userId);
+    if (pending.length > 0) {
+      const payload = pending[0];
+      queuedNotification = {
+        eventKind: payload.orderId.startsWith("TEST-") ? "test" : "notification",
+        payload
+      };
+    }
+  }
+
   if (!queuedNotification) {
     emitOverlayPauseState(userId, await getOverlayPauseState(userId));
     return false;

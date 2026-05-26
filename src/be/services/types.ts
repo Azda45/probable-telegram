@@ -7,7 +7,6 @@ export interface User {
   display_name: string;
   avatar_url: string | null;
   bio: string | null;
-  stream_key: string;
   overlay_token: string;
   min_amount: number;
   max_amount: number;
@@ -16,6 +15,10 @@ export interface User {
   is_admin: number;
   bank_name: string | null;
   bank_account: string | null;
+  youtube_url: string | null;
+  instagram_url: string | null;
+  twitter_url: string | null;
+  facebook_url: string | null;
 }
 
 export interface AuthSession {

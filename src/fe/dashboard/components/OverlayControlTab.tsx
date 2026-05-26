@@ -48,23 +48,24 @@ export default function OverlayControlTab({
   return (
     <div className="space-y-6">
       <div className="card p-4 sm:p-6">
-        <h3 className="text-lg font-bold mb-4">Overlay Control</h3>
-        <p className="text-[var(--color-text-secondary)] mb-6">
-          Berikut adalah URL API *HTTP GET* yang bisa kamu *copy* dan pasang di **Elgato Stream Deck** atau *macro/hotkey* lainnya. 
-          Setiap kali URL ini diakses (GET request), aksi akan langsung dijalankan tanpa perlu login.
+        <h3 className="text-lg font-bold mb-3">API & Remote Control</h3>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-6 leading-relaxed">
+          Berikut adalah <strong>URL HTTP GET</strong> yang bisa kamu pasang di <strong>Elgato Stream Deck</strong>, Touch Portal, atau <em>macro/hotkey</em> lainnya. 
+          Setiap URL akan langsung mengeksekusi aksi terkait secara instan tanpa perlu proses login.
         </p>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: '1rem' }}>
           
-          <div className="bg-black/10 dark:bg-black/20 rounded-xl p-4 border border-[var(--color-border)] flex flex-col gap-4 relative transition-colors hover:border-[var(--color-primary)]/50">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-lg shrink-0 mt-1 sm:mt-0">
+          {/* Remote Control */}
+          <div className="bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-border)] flex flex-col hover:border-[var(--color-primary)]/50 transition-all shadow-sm" style={{ padding: '1.25rem', gap: '1rem' }}>
+            <div className="flex items-center" style={{ gap: '0.75rem' }}>
+              <div className="p-2.5 bg-blue-500/10 text-blue-400 rounded-lg shrink-0">
                 <MonitorPlay className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-bold text-sm">Remote Control (Web)</h4>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                  Buka link ini di HP/Tablet untuk mengontrol overlay lewat browser tanpa aplikasi tambahan.
+                <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Remote Control (Web)</h4>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                  Buka panel ini di HP/Tablet untuk mengontrol overlay secara nirkabel dari browser.
                 </p>
               </div>
             </div>
@@ -72,23 +73,24 @@ export default function OverlayControlTab({
               label="URL Web"
               url={controlUrl}
               actions={
-                <Link href={controlUrl || "#"} target="_blank" rel="noopener noreferrer" prefetch={false} className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center gap-2 min-w-[90px]">
+                <Link href={controlUrl || "#"} target="_blank" rel="noopener noreferrer" prefetch={false} className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center" style={{ gap: '0.5rem' }}>
                   <MonitorPlay className="w-4 h-4" />
-                  Buka
+                  Buka Panel
                 </Link>
               }
             />
           </div>
 
-          <div className="bg-black/10 dark:bg-black/20 rounded-xl p-4 border border-[var(--color-border)] flex flex-col gap-4 relative transition-colors hover:border-[var(--color-primary)]/50">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2.5 bg-yellow-500/10 text-yellow-500 rounded-lg shrink-0 mt-1 sm:mt-0">
+          {/* Pause / Resume */}
+          <div className="bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-border)] flex flex-col hover:border-[var(--color-primary)]/50 transition-all shadow-sm" style={{ padding: '1.25rem', gap: '1rem' }}>
+            <div className="flex items-center" style={{ gap: '0.75rem' }}>
+              <div className="p-2.5 bg-yellow-500/10 text-yellow-400 rounded-lg shrink-0">
                 <PauseCircle className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-bold text-sm">Pause / Resume</h4>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                  Jeda notifikasi donasi yang sedang berjalan, atau lanjutkan kembali antrean donasi.
+                <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Pause & Resume</h4>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                  Jeda notifikasi donasi yang berjalan, atau lanjutkan kembali antrean donasi.
                 </p>
               </div>
             </div>
@@ -96,7 +98,7 @@ export default function OverlayControlTab({
               label="API URL (GET)"
               url={pauseApiUrl}
               actions={
-                <button className={`btn btn-sm flex-1 sm:flex-none flex items-center justify-center gap-2 min-w-[100px] ${isOverlayPaused ? "btn-primary" : "btn-secondary"}`} onClick={onPauseOverlay}>
+                <button className={`btn btn-sm flex-1 sm:flex-none flex items-center justify-center ${isOverlayPaused ? "btn-primary" : "btn-secondary"}`} style={{ gap: '0.5rem' }} onClick={onPauseOverlay}>
                   {isOverlayPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
                   {isOverlayPaused ? "Resume" : "Pause"}
                 </button>
@@ -104,15 +106,16 @@ export default function OverlayControlTab({
             />
           </div>
 
-          <div className="bg-black/10 dark:bg-black/20 rounded-xl p-4 border border-[var(--color-border)] flex flex-col gap-4 relative transition-colors hover:border-[var(--color-primary)]/50">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2.5 bg-orange-500/10 text-orange-500 rounded-lg shrink-0 mt-1 sm:mt-0">
+          {/* Skip Notifikasi */}
+          <div className="bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-border)] flex flex-col hover:border-[var(--color-primary)]/50 transition-all shadow-sm" style={{ padding: '1.25rem', gap: '1rem' }}>
+            <div className="flex items-center" style={{ gap: '0.75rem' }}>
+              <div className="p-2.5 bg-orange-500/10 text-orange-400 rounded-lg shrink-0">
                 <SkipForward className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-bold text-sm">Skip Notifikasi</h4>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                  Lompati notifikasi donasi yang sedang tampil saat ini dan lanjut ke donasi berikutnya.
+                <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Skip Notifikasi</h4>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                  Lompati donasi saat ini dan langsung tampilkan antrean donasi berikutnya.
                 </p>
               </div>
             </div>
@@ -120,7 +123,7 @@ export default function OverlayControlTab({
               label="API URL (GET)"
               url={skipApiUrl}
               actions={
-                <button type="button" className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center gap-2 min-w-[100px]" onClick={onSkipOverlay}>
+                <button type="button" className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center" style={{ gap: '0.5rem' }} onClick={onSkipOverlay}>
                   <SkipForward className="w-4 h-4" />
                   Trigger
                 </button>
@@ -128,15 +131,16 @@ export default function OverlayControlTab({
             />
           </div>
 
-          <div className="bg-black/10 dark:bg-black/20 rounded-xl p-4 border border-[var(--color-border)] flex flex-col gap-4 relative transition-colors hover:border-[var(--color-primary)]/50">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2.5 bg-red-500/10 text-red-500 rounded-lg shrink-0 mt-1 sm:mt-0">
+          {/* Toggle Sensor */}
+          <div className="bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-border)] flex flex-col hover:border-[var(--color-primary)]/50 transition-all shadow-sm" style={{ padding: '1.25rem', gap: '1rem' }}>
+            <div className="flex items-center" style={{ gap: '0.75rem' }}>
+              <div className="p-2.5 bg-red-500/10 text-red-400 rounded-lg shrink-0">
                 <EyeOff className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-bold text-sm">Toggle Sensor Pesan</h4>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                  Sembunyikan atau tampilkan pesan donasi di layar secara instan (berguna jika ada pesan toxic).
+                <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Toggle Sensor Pesan</h4>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                  Sensor atau tampilkan kembali pesan donasi di layar secara instan (anti toxic).
                 </p>
               </div>
             </div>
@@ -146,7 +150,8 @@ export default function OverlayControlTab({
               actions={
                 <button
                   type="button"
-                  className={`btn btn-sm flex-1 sm:flex-none flex items-center justify-center gap-2 min-w-[100px] ${isCensored ? "btn-primary" : "btn-secondary"}`}
+                  className={`btn btn-sm flex-1 sm:flex-none flex items-center justify-center ${isCensored ? "btn-primary" : "btn-secondary"}`}
+                  style={{ gap: '0.5rem' }}
                   onClick={handleToggleCensor}
                 >
                   {isCensored ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -156,15 +161,16 @@ export default function OverlayControlTab({
             />
           </div>
 
-          <div className="bg-black/10 dark:bg-black/20 rounded-xl p-4 border border-[var(--color-border)] flex flex-col gap-4 relative transition-colors hover:border-[var(--color-primary)]/50">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2.5 bg-green-500/10 text-green-500 rounded-lg shrink-0 mt-1 sm:mt-0">
+          {/* Test Notifikasi */}
+          <div className="bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-border)] flex flex-col hover:border-[var(--color-primary)]/50 transition-all shadow-sm" style={{ padding: '1.25rem', gap: '1rem' }}>
+            <div className="flex items-center" style={{ gap: '0.75rem' }}>
+              <div className="p-2.5 bg-green-500/10 text-green-400 rounded-lg shrink-0">
                 <Bell className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-bold text-sm">Test Notifikasi</h4>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                  Kirim notifikasi donasi bohongan ke layar untuk mengecek tampilan overlay.
+                <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Test Notifikasi</h4>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                  Kirim donasi simulasi/bohongan untuk menguji tampilan overlay di OBS.
                 </p>
               </div>
             </div>
@@ -172,23 +178,24 @@ export default function OverlayControlTab({
               label="API URL (GET)"
               url={testApiUrl}
               actions={
-                <button className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center gap-2 min-w-[100px]" onClick={onTestOverlay} disabled={testingSend}>
+                <button className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center" style={{ gap: '0.5rem' }} onClick={onTestOverlay} disabled={testingSend}>
                   <Bell className="w-4 h-4" />
-                  {testingSend ? "Sending..." : "Trigger"}
+                  {testingSend ? "Loading..." : "Trigger"}
                 </button>
               }
             />
           </div>
 
-          <div className="bg-black/10 dark:bg-black/20 rounded-xl p-4 border border-[var(--color-border)] flex flex-col gap-4 relative transition-colors hover:border-[var(--color-primary)]/50">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2.5 bg-purple-500/10 text-purple-500 rounded-lg shrink-0 mt-1 sm:mt-0">
+          {/* Refresh Overlay */}
+          <div className="bg-[var(--color-surface-hover)]/30 rounded-xl border border-[var(--color-border)] flex flex-col hover:border-[var(--color-primary)]/50 transition-all shadow-sm" style={{ padding: '1.25rem', gap: '1rem' }}>
+            <div className="flex items-center" style={{ gap: '0.75rem' }}>
+              <div className="p-2.5 bg-purple-500/10 text-purple-400 rounded-lg shrink-0">
                 <RefreshCw className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-bold text-sm">Refresh Overlay</h4>
-                <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                  Muat ulang halaman overlay di OBS jika terjadi error, nge-freeze, atau nge-lag.
+                <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Refresh Overlay</h4>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                  Muat ulang otomatis sumber browser OBS jika terjadi lag atau freeze.
                 </p>
               </div>
             </div>
@@ -197,7 +204,8 @@ export default function OverlayControlTab({
               url={refreshApiUrl}
               actions={
                 <button
-                  className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center gap-2 min-w-[100px]"
+                  className="btn btn-secondary btn-sm flex-1 sm:flex-none flex items-center justify-center"
+                  style={{ gap: '0.5rem' }}
                   onClick={onRefreshOverlay}
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -207,16 +215,18 @@ export default function OverlayControlTab({
             />
           </div>
 
-          <div className="pt-6 border-t border-[var(--color-border)] mt-8 flex flex-col sm:flex-row items-center gap-4">
-            <button className="btn btn-danger w-full sm:w-auto flex items-center justify-center gap-2 whitespace-nowrap" onClick={onRegenerate}>
-              <KeyRound className="w-4 h-4" />
-              Regenerate Token
-            </button>
-            <p className="text-xs text-[var(--color-text-secondary)]">
-              <strong>Awas!</strong> Melakukan regenerate akan mengubah semua token di atas (termasuk link OBS di Quick Links). Update semua link di Stream Deck dan OBS jika token diganti.
-            </p>
-          </div>
         </div>
+
+        <div className="rounded-xl bg-red-500/5 border border-red-500/20 flex flex-col sm:flex-row items-center" style={{ padding: '1.25rem', gap: '1rem', marginTop: '2rem' }}>
+          <button className="btn btn-danger w-full sm:w-auto flex items-center justify-center gap-2 shrink-0" onClick={onRegenerate}>
+            <KeyRound className="w-4 h-4" />
+            Regenerate Tokens
+          </button>
+          <p className="text-xs text-red-400/90 leading-relaxed">
+            <strong>Peringatan!</strong> Melakukan aksi ini akan mengubah semua token API di atas (termasuk Link OBS). Kamu wajib memperbarui ulang semua link di Stream Deck dan OBS jika token diganti.
+          </p>
+        </div>
+
       </div>
     </div>
   );

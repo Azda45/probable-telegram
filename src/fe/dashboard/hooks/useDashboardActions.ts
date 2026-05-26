@@ -74,7 +74,8 @@ export default function useDashboardActions({
   const testOverlay = async () => {
     setTestingSend(true);
     try {
-      const data = await sendOverlayTestNotification();
+      if (!overlayToken) throw new Error("Token overlay belum tersedia");
+      const data = await sendOverlayTestNotification(overlayToken);
       toast.success(`Test notifikasi dikirim! (${data.donation.donor_name} — Rp${data.donation.amount.toLocaleString("id-ID")})`);
     } catch (error) {
       toast.error((error as Error).message);

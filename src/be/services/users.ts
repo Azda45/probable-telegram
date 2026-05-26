@@ -10,13 +10,12 @@ import type { OverlayOwner, User } from "./types";
 export async function createUser(username: string, email: string, password: string, displayName: string): Promise<User> {
   const id = uuidv4();
   const passwordHash = await bcrypt.hash(password, 12);
-  const streamKey = nanoid(32);
   const overlayToken = nanoid(32);
 
   await pool.execute(
-    `INSERT INTO users (id, username, email, password_hash, display_name, stream_key, overlay_token)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [id, username, email, passwordHash, displayName, streamKey, overlayToken]
+    `INSERT INTO users (id, username, email, password_hash, display_name, overlay_token)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [id, username, email, passwordHash, displayName, overlayToken]
   );
   await createDefaultOverlaySettings(id);
 
@@ -45,8 +44,9 @@ export async function getUserById(id: string): Promise<User | null> {
   await ensureUserCoreColumns();
 
   const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT id, username, email, display_name, avatar_url, bio, stream_key, overlay_token,
-            min_amount, max_amount, total_received, created_at, bank_name, bank_account, is_admin
+    `SELECT id, username, email, display_name, avatar_url, bio, overlay_token,
+            min_amount, max_amount, total_received, created_at, bank_name, bank_account, is_admin,
+            youtube_url, instagram_url, twitter_url, facebook_url
      FROM users WHERE id = ?`,
     [id]
   );
@@ -57,8 +57,9 @@ export async function getUserByUsername(username: string): Promise<User | null> 
   await ensureUserCoreColumns();
 
   const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT id, username, email, display_name, avatar_url, bio, stream_key, overlay_token,
-            min_amount, max_amount, total_received, created_at, bank_name, bank_account, is_admin
+    `SELECT id, username, email, display_name, avatar_url, bio, overlay_token,
+            min_amount, max_amount, total_received, created_at, bank_name, bank_account, is_admin,
+            youtube_url, instagram_url, twitter_url, facebook_url
      FROM users WHERE username = ?`,
     [username]
   );
@@ -84,11 +85,15 @@ const USER_SETTING_ASSIGNMENTS = {
   avatar_url: "avatar_url = ?",
   bank_name: "bank_name = ?",
   bank_account: "bank_account = ?",
+  youtube_url: "youtube_url = ?",
+  instagram_url: "instagram_url = ?",
+  twitter_url: "twitter_url = ?",
+  facebook_url: "facebook_url = ?",
 } as const;
 
 export async function updateUserSettings(
   userId: string,
-  settings: Partial<Pick<User, "display_name" | "bio" | "min_amount" | "max_amount" | "avatar_url" | "bank_name" | "bank_account">>
+  settings: Partial<Pick<User, "display_name" | "bio" | "min_amount" | "max_amount" | "avatar_url" | "bank_name" | "bank_account" | "youtube_url" | "instagram_url" | "twitter_url" | "facebook_url">>
 ): Promise<void> {
   await ensureUserCoreColumns();
 
@@ -109,12 +114,11 @@ export async function updateUserSettings(
   await pool.query(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`, values);
 }
 
-export async function regenerateKeys(userId: string): Promise<{ streamKey: string; overlayToken: string }> {
-  const streamKey = nanoid(32);
+export async function regenerateKeys(userId: string): Promise<{ overlayToken: string }> {
   const overlayToken = nanoid(32);
   await pool.execute(
-    `UPDATE users SET stream_key = ?, overlay_token = ? WHERE id = ?`,
-    [streamKey, overlayToken, userId]
+    `UPDATE users SET overlay_token = ? WHERE id = ?`,
+    [overlayToken, userId]
   );
-  return { streamKey, overlayToken };
+  return { overlayToken };
 }

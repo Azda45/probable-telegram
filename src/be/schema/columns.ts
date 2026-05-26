@@ -9,6 +9,10 @@ export const USER_COLUMN_DEFINITIONS = {
   bank_name: "VARCHAR(50) DEFAULT NULL",
   bank_account: "VARCHAR(50) DEFAULT NULL",
   withdrawn_amount: "BIGINT DEFAULT 0",
+  youtube_url: "VARCHAR(255) DEFAULT NULL",
+  instagram_url: "VARCHAR(255) DEFAULT NULL",
+  twitter_url: "VARCHAR(255) DEFAULT NULL",
+  facebook_url: "VARCHAR(255) DEFAULT NULL",
 } as const;
 
 export const DONATION_COLUMN_DEFINITIONS = {

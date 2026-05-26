@@ -30,7 +30,7 @@ export async function fetchDashboardProfile(): Promise<DashboardProfileResponse>
   };
 }
 
-export async function fetchDashboardDonations(page = 1, filter: DonationFilter = "all") {
+export async function fetchDashboardDonations(page = 1, filter: DonationFilter = "success") {
   const url = new URL("/api/donations", window.location.origin);
   url.searchParams.set("page", page.toString());
   url.searchParams.set("limit", "15");
@@ -67,11 +67,16 @@ export async function regenerateDashboardKeys() {
   }));
 }
 
-export async function sendOverlayTestNotification() {
-  return ensureOk<{ donation: { donor_name: string; amount: number }; error?: string }>(await fetch("/api/overlay/test", { method: "POST" }));
+export async function sendOverlayTestNotification(overlayToken: string) {
+  return ensureOk<{ donation: { donor_name: string; amount: number }; error?: string }>(await fetch("/api/overlay/control/test", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: overlayToken }),
+  }));
 }
 
 export async function replayOverlayDonation(donationId: string) {
+  // Keeping replay separate since it requires donationId, or we could add it to control API.
   return ensureOk<{ donation: { donor_name: string; amount: number }; error?: string }>(await fetch("/api/overlay/replay", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -80,11 +85,19 @@ export async function replayOverlayDonation(donationId: string) {
 }
 
 export async function skipOverlayNotification(overlayToken: string) {
-  return ensureOk<{ emitted: boolean; error?: string }>(await fetch(`/api/overlay/skip?token=${encodeURIComponent(overlayToken)}`));
+  return ensureOk<{ emitted: boolean; error?: string }>(await fetch("/api/overlay/control/skip", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: overlayToken }),
+  }));
 }
 
 export async function toggleOverlayCensor(overlayToken: string) {
-  return ensureOk<{ isCensored: boolean; error?: string }>(await fetch(`/api/overlay/censor?token=${encodeURIComponent(overlayToken)}`));
+  return ensureOk<{ isCensored: boolean; error?: string }>(await fetch("/api/overlay/control/censor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: overlayToken }),
+  }));
 }
 
 export async function deleteDashboardDonation(donationId: string) {
@@ -92,11 +105,19 @@ export async function deleteDashboardDonation(donationId: string) {
 }
 
 export async function toggleOverlayPause(overlayToken: string) {
-  return ensureOk<{ paused: boolean; error?: string }>(await fetch(`/api/overlay/pause?token=${encodeURIComponent(overlayToken)}`));
+  return ensureOk<{ paused: boolean; error?: string }>(await fetch("/api/overlay/control/pause", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: overlayToken }),
+  }));
 }
 
 export async function triggerOverlayRefresh(overlayToken: string) {
-  return ensureOk<{ emitted: boolean; error?: string }>(await fetch(`/api/overlay/refresh?token=${encodeURIComponent(overlayToken)}`));
+  return ensureOk<{ emitted: boolean; error?: string }>(await fetch("/api/overlay/control/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: overlayToken }),
+  }));
 }
 
 export function logoutDashboardUser() {

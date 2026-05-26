@@ -34,8 +34,8 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                       alt={`${user.display_name}'s avatar`}
                       width={44}
                       height={44}
-                      unoptimized
                       className="w-full h-full object-cover"
+                      unoptimized
                     />
                   </div>
                   <div className="flex flex-col items-start hidden sm:flex text-left">

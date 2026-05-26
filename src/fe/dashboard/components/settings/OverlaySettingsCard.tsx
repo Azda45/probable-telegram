@@ -26,13 +26,13 @@ export default function OverlaySettingsCard({ overlayForm, overlayPreviewNonce, 
   };
 
   return (
-    <div className="card">
-      <h3 className="text-lg font-bold mb-5 flex items-center gap-2">
+    <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+      <h3 className="text-lg font-bold flex items-center" style={{ marginBottom: '1.25rem', gap: '0.5rem' }}>
         <MonitorPlay className="w-5 h-5 text-[var(--color-primary)]" /> Pengaturan Overlay
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: '1rem' }}>
         <SettingsField label="Durasi Alert (ms)">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col" style={{ gap: '0.25rem' }}>
             <input className="input" type="text" inputMode="numeric" pattern="[0-9]*" value={overlayForm.alert_duration === 0 ? '' : overlayForm.alert_duration} onChange={(e) => setOverlayForm({ ...overlayForm, alert_duration: e.target.value === '' ? 0 : Number(e.target.value.replace(/\D/g, '')) })} />
             <p className="text-xs text-[var(--color-message)]">Minimal 5000 ms (1 detik = 1000 ms).</p>
           </div>
@@ -51,7 +51,7 @@ export default function OverlaySettingsCard({ overlayForm, overlayPreviewNonce, 
           </select>
         </SettingsField>
         <SettingsField label="Teks Aksi (Contoh: berdonasi)">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col" style={{ gap: '0.25rem' }}>
             <input className="input" type="text" maxLength={50} value={overlayForm.action_text} onChange={(e) => setOverlayForm({ ...overlayForm, action_text: e.target.value })} placeholder="berdonasi" />
             <p className="text-xs text-[var(--color-message)]">Teks yang muncul di antara nama dan nominal.</p>
           </div>
@@ -61,8 +61,8 @@ export default function OverlaySettingsCard({ overlayForm, overlayPreviewNonce, 
         <OverlayProgressToggle overlayForm={overlayForm} setOverlayForm={setOverlayForm} />
       </div>
       <OverlayPreviewCard overlayForm={overlayForm} overlayPreviewNonce={overlayPreviewNonce} setOverlayPreviewNonce={setOverlayPreviewNonce} />
-      <div className="mt-6 pt-5 border-t border-[var(--color-border)] flex justify-end">
-        <button className="btn btn-primary flex w-full items-center justify-center gap-2 sm:w-auto" onClick={handleSave}>
+      <div className="border-t border-[var(--color-border)] flex justify-end" style={{ marginTop: '1.5rem', paddingTop: '1.25rem' }}>
+        <button className="btn btn-primary flex w-full items-center justify-center sm:w-auto" style={{ gap: '0.5rem' }} onClick={handleSave}>
           <Save className="w-4 h-4" />
           Simpan Pengaturan Overlay
         </button>
